@@ -3,7 +3,7 @@
  * 封装游戏核心逻辑
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   BOARD_SIZE,
   INITIAL_SNAKE_LENGTH,
@@ -11,6 +11,9 @@ import {
   Direction,
   OPPOSITE_DIRECTION,
 } from '@/constants/snakeConstants';
+import { persistenceService } from '@/services/persistenceService';
+import { audioService, SoundType } from '@/services/audioService';
+import { vibrationService, VibrationType } from '@/services/vibrationService';
 
 /**
  * 坐标接口
@@ -65,20 +68,9 @@ export function useSnakeGame() {
    * 最高分
    */
   const bestScore = ref<number>(0);
-  
+
   // 游戏循环定时器
   let gameLoop: number | null = null;
-
-  // ========== 计算属性 ==========
-  
-  /**
-   * 游戏状态文本
-   */
-  const statusText = computed((): string => {
-    if (isGameOver.value) return '游戏结束';
-    if (!isPlaying.value) return '按方向键开始';
-    return '游戏中...';
-  });
 
   // ========== 辅助函数 ==========
   
@@ -116,6 +108,104 @@ export function useSnakeGame() {
       });
     }
   }
+
+  // ========== 持久化 ==========
+
+  /**
+   * 保存游戏状态
+   */
+  function saveGameState(): void {
+    const gameState = {
+      snake: snake.value,
+      food: food.value,
+      direction: direction.value,
+      gameOver: isGameOver.value,
+    };
+
+    persistenceService.saveSnakeGame({
+      stats: {
+        score: score.value,
+        bestScore: bestScore.value,
+      },
+      gameState,
+    });
+  }
+
+  /**
+   * 加载游戏状态
+   */
+  function loadGameState(): void {
+    const data = persistenceService.loadSnakeGame();
+    
+    // 加载统计数据
+    score.value = data.stats.score;
+    bestScore.value = data.stats.bestScore;
+
+    // 如果有游戏状态，恢复游戏
+    if (data.gameState) {
+      // 如果游戏已经结束，重新初始化而不是恢复失败状态
+      if (data.gameState.gameOver) {
+        initSnake();
+        generateFood();
+        isPlaying.value = false;
+        isGameOver.value = false;
+      } else {
+        // 恢复游戏状态
+        snake.value = data.gameState.snake;
+        food.value = data.gameState.food;
+        direction.value = data.gameState.direction as Direction;
+        nextDirection.value = data.gameState.direction as Direction;
+        isGameOver.value = data.gameState.gameOver;
+        
+        // 如果游戏没有结束，恢复游戏循环
+        if (!isGameOver.value) {
+          isPlaying.value = true;
+          if (gameLoop) {
+            clearInterval(gameLoop);
+          }
+          gameLoop = window.setInterval(gameLoopFn, GAME_SPEED);
+        }
+      }
+    } else {
+      // 初始化新游戏
+      initSnake();
+      generateFood();
+      isPlaying.value = false;
+      isGameOver.value = false;
+    }
+  }
+
+  /**
+   * 清除游戏状态
+   */
+  function clearGameState(): void {
+    const data = persistenceService.loadSnakeGame();
+    persistenceService.saveSnakeGame({
+      stats: data.stats,
+      gameState: null,
+    });
+  }
+
+  // 监听分数和游戏状态变化，自动保存
+  watch([score, bestScore, snake, food, direction, isGameOver], () => {
+    if (isPlaying.value && !isGameOver.value) {
+      saveGameState();
+    }
+  }, { deep: true });
+
+  // 初始化时加载数据
+  loadGameState();
+  
+  // ========== 计算属性 ==========
+  
+  /**
+   * 游戏状态文本
+   */
+  const statusText = computed((): string => {
+    if (isGameOver.value) return '游戏结束';
+    if (!isPlaying.value) return '按方向键开始';
+    return '游戏中...';
+  });
   
   /**
    * 移动蛇
@@ -156,6 +246,8 @@ export function useSnakeGame() {
     if (newHead.x === food.value.x && newHead.y === food.value.y) {
       score.value += 10;
       generateFood();
+      audioService.play(SoundType.EAT);
+      vibrationService.vibrate(VibrationType.EAT);
     } else {
       // 没吃到食物，移除尾部
       snake.value.pop();
@@ -195,13 +287,16 @@ export function useSnakeGame() {
    * 开始游戏
    */
   function startGame(): void {
-    isPlaying.value = true;
-    isGameOver.value = false;
+    // 初始化游戏状态
     score.value = 0;
-    direction.value = Direction.RIGHT;
-    nextDirection.value = Direction.RIGHT;
     initSnake();
     generateFood();
+    
+    // 设置游戏状态（在 initSnake 之后）
+    isPlaying.value = true;
+    isGameOver.value = false;
+    direction.value = Direction.RIGHT;
+    nextDirection.value = Direction.RIGHT;
     
     // 启动游戏循环
     if (gameLoop) {
@@ -240,6 +335,9 @@ export function useSnakeGame() {
   function endGame(): void {
     isPlaying.value = false;
     isGameOver.value = true;
+    audioService.play(SoundType.CRASH);
+    vibrationService.vibrate(VibrationType.CRASH);
+    
     if (gameLoop) {
       clearInterval(gameLoop);
       gameLoop = null;
@@ -256,6 +354,7 @@ export function useSnakeGame() {
    */
   function restartGame(): void {
     startGame();
+    clearGameState();
   }
   
   /**
@@ -271,9 +370,10 @@ export function useSnakeGame() {
     // ========== 生命周期 ==========
     
     onMounted(() => {
-      // 初始化游戏
-      initSnake();
-      generateFood();
+      // 清理定时器
+      if (gameLoop) {
+        clearInterval(gameLoop);
+      }
     });
     
     onUnmounted(() => {
@@ -297,5 +397,7 @@ export function useSnakeGame() {
     continueGame,
     restartGame,
     changeDirection,
+    loadGameState,
+    clearGameState,
   };
 }

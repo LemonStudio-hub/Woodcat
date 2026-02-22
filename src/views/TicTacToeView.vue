@@ -1,10 +1,10 @@
 <template>
-  <div class="gomoku-view">
+  <div class="tictactoe-view">
     <div class="container">
       <div class="game-header">
         <button @click="goBack" class="back-button">← 返回首页</button>
       </div>
-      
+
       <!-- 游戏模式选择器 -->
       <div v-if="!gameStarted" class="mode-selector">
         <div class="mode-selector-content">
@@ -38,38 +38,38 @@
           </button>
         </div>
       </div>
-      
+
       <!-- 游戏区域 -->
       <div v-else class="game-layout">
         <div class="game-main">
-          <GomokuBoard />
+          <TicTacToeBoard />
         </div>
       </div>
-      
-      <!-- 棋色提示 -->
-      <Transition name="fade">
-        <div v-if="showColorHint" class="color-hint-overlay">
-          <div class="color-hint-content">
-            <div class="color-hint-icon">{{ playerColorIcon }}</div>
-            <div class="color-hint-text">{{ playerColorText }}</div>
-          </div>
-        </div>
-      </Transition>
     </div>
   </div>
+
+  <!-- 棋色提示 -->
+  <Transition name="fade">
+    <div v-if="showColorHint" class="color-hint-overlay">
+      <div class="color-hint-content">
+        <div class="color-hint-icon">{{ playerColorIcon }}</div>
+        <div class="color-hint-text">{{ playerColorText }}</div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
 /**
- * 五子棋游戏视图组件
- * 五子棋游戏主页面
+ * 井字棋游戏视图组件
+ * 井字棋游戏主页面
  */
 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import GomokuBoard from '@/components/games/Gomoku/GomokuBoard.vue';
-import { useGomokuGame } from '@/composables/useGomokuGame';
-import { GameMode, Player } from '@/constants/gomokuConstants';
+import TicTacToeBoard from '@/components/games/TicTacToe/TicTacToeBoard.vue';
+import { useTicTacToeGame } from '@/composables/useTicTacToeGame';
+import { GameMode, Cell } from '@/constants/ticTacToeConstants';
 
 // 路由实例
 const router = useRouter();
@@ -79,7 +79,7 @@ const {
   gameMode,
   aiPlayer,
   startNewGame,
-} = useGomokuGame();
+} = useTicTacToeGame();
 
 /**
  * 游戏是否开始
@@ -95,17 +95,17 @@ const showColorHint = ref<boolean>(false);
  * 先手信息
  */
 const firstPlayerText = computed((): string => {
-  if (gameMode.value !== GameMode.PVE) return '黑子先手';
-  if (!aiPlayer.value) return '黑子先手';
-  return aiPlayer.value === Player.BLACK ? 'AI先手（黑子）' : '你先手（黑子）';
+  if (gameMode.value !== GameMode.PVE) return 'X先手';
+  if (!aiPlayer.value) return 'X先手';
+  return aiPlayer.value === Cell.X ? 'AI先手（X）' : '你先手（X）';
 });
 
 /**
  * 玩家棋色图标
  */
 const playerColorIcon = computed((): string => {
-  if (gameMode.value !== GameMode.PVE || !aiPlayer.value) return '⚫';
-  return aiPlayer.value === Player.WHITE ? '⚫' : '⚪';
+  if (gameMode.value !== GameMode.PVE || !aiPlayer.value) return 'X';
+  return aiPlayer.value === Cell.O ? 'X' : 'O';
 });
 
 /**
@@ -114,7 +114,7 @@ const playerColorIcon = computed((): string => {
 const playerColorText = computed((): string => {
   if (gameMode.value !== GameMode.PVE) return '双人对战模式';
   if (!aiPlayer.value) return '双人对战模式';
-  return aiPlayer.value === Player.WHITE ? '你执黑棋（先手）' : '你执白棋（后手）';
+  return aiPlayer.value === Cell.O ? '你执X（先手）' : '你执O（后手）';
 });
 
 /**
@@ -130,7 +130,7 @@ function handleModeSelect(mode: GameMode): void {
 function handleStartGame(): void {
   gameStarted.value = true;
   startNewGame();
-  
+
   // 人机对战模式下显示棋色提示
   if (gameMode.value === GameMode.PVE) {
     showColorHint.value = true;
@@ -152,17 +152,17 @@ function goBack(): void {
  */
 onMounted(() => {
   const channel = new BroadcastChannel('woodcat-games');
-  
+
   channel.onmessage = (event) => {
     const message = event.data;
-    
+
     // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
-    if (message.type === 'close-game' && message.gameRoute !== '/game/gomoku') {
+    if (message.type === 'close-game' && message.gameRoute !== '/game/tictactoe') {
       channel.close();
       window.close();
     }
   };
-  
+
   // 在组件卸载时清理
   onUnmounted(() => {
     channel.close();
@@ -172,10 +172,10 @@ onMounted(() => {
 
 <style scoped>
 /**
- * 五子棋游戏视图样式
+ * 井字棋游戏视图样式
  */
 
-.gomoku-view {
+.tictactoe-view {
   min-height: calc(100vh - 8rem);
   padding: var(--spacing-8) 0;
 }
@@ -398,7 +398,7 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 640px) {
-  .gomoku-view {
+  .tictactoe-view {
     padding: var(--spacing-4) 0;
   }
 

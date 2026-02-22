@@ -7,6 +7,8 @@ import { toRefs } from 'vue';
 import { RPSChoice, RPSResult, type RPSGameHistory } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import { useAIStrategy } from './useAIStrategy';
+import { audioService, SoundType } from '@/services/audioService';
+import { vibrationService, VibrationType } from '@/services/vibrationService';
 
 /**
  * 石头剪刀布游戏逻辑
@@ -58,6 +60,7 @@ export function useRockPaperScissors() {
     
     // 设置玩家选择
     gameStore.setPlayerChoice(playerChoice);
+    audioService.play(SoundType.CLICK);
     
     // 获取电脑选择（使用 AI 策略）
     const computerChoice = getComputerChoice();
@@ -66,6 +69,18 @@ export function useRockPaperScissors() {
     // 判断结果
     const result = determineResult(playerChoice, computerChoice);
     gameStore.setCurrentResult(result);
+    
+    // 播放音效和震动
+    if (result === RPSResult.WIN) {
+      audioService.play(SoundType.WIN);
+      vibrationService.vibrate(VibrationType.WIN);
+    } else if (result === RPSResult.LOSE) {
+      audioService.play(SoundType.LOSE);
+      vibrationService.vibrate(VibrationType.LOSE);
+    } else {
+      audioService.play(SoundType.DRAW);
+      vibrationService.vibrate(VibrationType.DRAW);
+    }
     
     // 更新分数
     gameStore.updateScore(result);

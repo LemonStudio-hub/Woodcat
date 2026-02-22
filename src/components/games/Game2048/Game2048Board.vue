@@ -29,7 +29,7 @@
         ></div>
       </div>
 
-      <transition-group name="tile">
+      <div class="tiles-container">
         <div
           v-for="tile in tiles"
           :key="tile.id"
@@ -42,7 +42,7 @@
         >
           {{ tile.value }}
         </div>
-      </transition-group>
+      </div>
     </div>
 
     <div class="game-controls">
@@ -301,6 +301,14 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
 }
 
+/* 方块容器 */
+.tiles-container {
+  position: absolute;
+  inset: 0;
+  padding: 1.5%;
+  pointer-events: none;
+}
+
 /* 方块 */
 .tile {
   position: absolute;
@@ -311,6 +319,7 @@ onUnmounted(() => {
   font-weight: 800;
   border-radius: var(--radius-md);
   transition: left 0.15s ease-in-out, top 0.15s ease-in-out;
+  pointer-events: auto;
 }
 
 /* 不同数值的方块颜色 */

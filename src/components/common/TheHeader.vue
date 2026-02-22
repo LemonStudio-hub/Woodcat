@@ -9,6 +9,7 @@
         <nav class="nav">
           <router-link to="/" class="nav-link" exact>首页</router-link>
           <a href="/game/random" class="nav-link" @click.prevent="openRandomGame()">游戏</a>
+          <router-link to="/settings" class="nav-link">设置</router-link>
         </nav>
       </div>
     </div>

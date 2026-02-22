@@ -33,6 +33,30 @@ export const GAME_LIST: GameInfo[] = [
     description: '经典黑白棋对战',
     route: '/game/gomoku',
   },
+  {
+    id: 'tetris',
+    name: '俄罗斯方块',
+    description: '经典方块消除游戏',
+    route: '/game/tetris',
+  },
+  {
+    id: 'tictactoe',
+    name: '井字棋',
+    description: '经典三连游戏',
+    route: '/game/tictactoe',
+  },
+  {
+    id: 'international-checkers',
+    name: '国际跳棋',
+    description: '经典8x8跳棋对战',
+    route: '/game/international-checkers',
+  },
+  {
+    id: 'chess',
+    name: '国际象棋',
+    description: '经典国际象棋对战',
+    route: '/game/chess',
+  },
 ];
 
 /**

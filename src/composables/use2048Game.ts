@@ -5,6 +5,10 @@
 
 import { ref, computed } from 'vue';
 import { Direction, BOARD_SIZE, INITIAL_TILES, NEW_TILE_4_PROBABILITY } from '@/constants/2048Constants';
+import { persistenceService } from '@/services/persistenceService';
+import { audioService, SoundType } from '@/services/audioService';
+import { vibrationService, VibrationType } from '@/services/vibrationService';
+import { useGame2048Store } from '@/stores/game2048Store';
 
 /**
  * 方块类型
@@ -30,30 +34,53 @@ export function use2048Game() {
    */
   const tiles = ref<Tile[]>([]);
 
-  /**
-   * 游戏分数
-   */
-  const score = ref<number>(0);
+  // ========== Store ==========
+
+  const game2048Store = useGame2048Store();
 
   /**
-   * 最高分数
+   * 加载游戏状态
    */
-  const bestScore = ref<number>(0);
+  function loadGameState(): void {
+    const data = persistenceService.loadGame2048();
+
+    // 如果有游戏状态，恢复游戏
+    if (data.gameState && data.gameState.tiles && data.gameState.tiles.length > 0) {
+      tiles.value = data.gameState.tiles.map(tile => ({
+        ...tile,
+        mergedFrom: undefined,
+        isNew: false,
+        isMerged: false,
+      }));
+      game2048Store.setGameOver(data.gameState.gameOver);
+      game2048Store.setGameWon(data.gameState.gameWon);
+      nextTileId = Math.max(...tiles.value.map(t => t.id), 0) + 1;
+    } else {
+      // 初始化新游戏
+      initGame();
+    }
+  }
 
   /**
-   * 游戏是否结束
+   * 清除游戏状态
    */
-  const gameOver = ref<boolean>(false);
-
-  /**
-   * 游戏是否获胜
-   */
-  const gameWon = ref<boolean>(false);
+  function clearGameState(): void {
+    persistenceService.saveGame2048({
+      stats: {
+        score: game2048Store.score,
+        bestScore: game2048Store.bestScore,
+      },
+      gameState: null,
+    });
+  }
 
   /**
    * 下一个方块 ID
    */
   let nextTileId = 0;
+
+  // 初始化时加载数据
+  loadGameState();
 
   // ========== 计算属性 ==========
 
@@ -61,8 +88,8 @@ export function use2048Game() {
    * 游戏状态文本
    */
   const statusText = computed(() => {
-    if (gameWon.value) return '你赢了！';
-    if (gameOver.value) return '游戏结束';
+    if (game2048Store.gameWon) return '你赢了！';
+    if (game2048Store.gameOver) return '游戏结束';
     return '游戏中';
   });
 
@@ -73,14 +100,34 @@ export function use2048Game() {
    */
   function initGame(): void {
     tiles.value = [];
-    score.value = 0;
-    gameOver.value = false;
-    gameWon.value = false;
+    game2048Store.resetGame();
     nextTileId = 0;
 
     // 添加初始方块
-    for (let i = 0; i < INITIAL_TILES; i++) {
+    let attempts = 0;
+    while (tiles.value.length < INITIAL_TILES && attempts < 100) {
       addRandomTile();
+      attempts++;
+    }
+
+    // 如果仍然没有足够的方块，强制添加
+    if (tiles.value.length === 0) {
+      tiles.value = [
+        {
+          id: nextTileId++,
+          value: 2,
+          row: 0,
+          col: 0,
+          isNew: true,
+        },
+        {
+          id: nextTileId++,
+          value: 2,
+          row: 0,
+          col: 1,
+          isNew: true,
+        },
+      ];
     }
   }
 
@@ -133,7 +180,7 @@ export function use2048Game() {
    * 移动方块
    */
   function move(direction: Direction): boolean {
-    if (gameOver.value || gameWon.value) return false;
+    if (game2048Store.gameOver || game2048Store.gameWon) return false;
 
     // 清除合并标记
     tiles.value.forEach((tile) => {
@@ -143,6 +190,7 @@ export function use2048Game() {
     });
 
     let moved = false;
+    let merged = false;
     const vector = getVector(direction);
     const traversals = buildTraversals(vector);
 
@@ -166,11 +214,12 @@ export function use2048Game() {
 
             tiles.value = tiles.value.filter((t) => t.id !== tile.id && t.id !== next.id);
             tiles.value.push(mergedTile);
-            score.value += mergedTile.value;
+            game2048Store.updateScore(game2048Store.score + mergedTile.value);
+            merged = true;
 
             // 检查是否获胜
             if (mergedTile.value === 2048) {
-              gameWon.value = true;
+              game2048Store.setGameWon(true);
             }
 
             moved = true;
@@ -188,11 +237,25 @@ export function use2048Game() {
 
     if (moved) {
       addRandomTile();
-      updateBestScore();
+
+      // 播放音效和震动
+      if (merged) {
+        audioService.play(SoundType.MERGE);
+        vibrationService.vibrate(VibrationType.MERGE);
+        if (game2048Store.gameWon) {
+          audioService.play(SoundType.WIN);
+          vibrationService.vibrate(VibrationType.WIN);
+        }
+      } else {
+        audioService.play(SoundType.MOVE);
+        vibrationService.vibrate(VibrationType.MOVE);
+      }
 
       // 检查游戏是否结束
       if (!movesAvailable()) {
-        gameOver.value = true;
+        game2048Store.setGameOver(true);
+        audioService.play(SoundType.LOSE);
+        vibrationService.vibrate(VibrationType.LOSE);
       }
     }
 
@@ -287,32 +350,26 @@ export function use2048Game() {
   }
 
   /**
-   * 更新最高分数
-   */
-  function updateBestScore(): void {
-    if (score.value > bestScore.value) {
-      bestScore.value = score.value;
-    }
-  }
-
-  /**
    * 重新开始游戏
    */
   function restartGame(): void {
     initGame();
+    clearGameState();
   }
 
   return {
     // 状态
     tiles,
-    score,
-    bestScore,
-    gameOver,
-    gameWon,
+    score: computed(() => game2048Store.score),
+    bestScore: computed(() => game2048Store.bestScore),
+    gameOver: computed(() => game2048Store.gameOver),
+    gameWon: computed(() => game2048Store.gameWon),
     statusText,
     // 方法
     initGame,
     move,
     restartGame,
+    loadGameState,
+    clearGameState,
   };
 }

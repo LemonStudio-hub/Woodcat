@@ -38,10 +38,14 @@
  */
 
 import { watchEffect, onUnmounted, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import type { RPSChoice } from '@/types/game';
 import RPSGameBoard from '@/components/games/RockPaperScissors/RPSGameBoard.vue';
 import RPSScoreBoard from '@/components/games/RockPaperScissors/RPSScoreBoard.vue';
 import { useRockPaperScissors } from '@/composables/useRockPaperScissors';
+
+// 路由实例
+const router = useRouter();
 
 // 自动重置延迟时间（毫秒）
 const AUTO_RESET_DELAY = 2000;
@@ -106,8 +110,7 @@ function handlePlayAgain(): void {
  * 返回首页
  */
 function goBack(): void {
-  // 直接关闭当前标签页
-  window.close();
+  router.push('/');
 }
 
 /**

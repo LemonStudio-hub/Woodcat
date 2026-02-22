@@ -30,8 +30,12 @@
  */
 
 import { onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import Game2048Board from '@/components/games/Game2048/Game2048Board.vue';
 import { use2048Game } from '@/composables/use2048Game';
+
+// 路由实例
+const router = useRouter();
 
 // 使用游戏逻辑
 const {
@@ -41,7 +45,6 @@ const {
   gameOver,
   gameWon,
   statusText,
-  initGame,
   move,
   restartGame,
 } = use2048Game();
@@ -73,31 +76,30 @@ function handleContinue(): void {
  * 返回首页
  */
 function goBack(): void {
-  // 直接关闭当前标签页
-  window.close();
+  router.push('/');
 }
 
-// 组件挂载时初始化游戏
+// 组件挂载时监听 BroadcastChannel
 onMounted(() => {
-  initGame();
-  
-  // 监听 BroadcastChannel
-  const channel = new BroadcastChannel('woodcat-games');
-  
-  channel.onmessage = (event) => {
-    const message = event.data;
-    
-    // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
-    if (message.type === 'close-game' && message.gameRoute !== '/game/2048') {
+  // 使用 nextTick 确保组件完全渲染后再设置监听
+  setTimeout(() => {
+    const channel = new BroadcastChannel('woodcat-games');
+
+    channel.onmessage = (event) => {
+      const message = event.data;
+
+      // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
+      if (message.type === 'close-game' && message.gameRoute !== '/game/2048') {
+        channel.close();
+        window.close();
+      }
+    };
+
+    // 在组件卸载时清理
+    onUnmounted(() => {
       channel.close();
-      window.close();
-    }
-  };
-  
-  // 在组件卸载时清理
-  onUnmounted(() => {
-    channel.close();
-  });
+    });
+  }, 100);
 });
 </script>
 

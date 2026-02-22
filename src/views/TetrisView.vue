@@ -1,12 +1,14 @@
 <template>
-  <div class="snake-view">
+  <div class="tetris-view">
     <div class="container">
       <div class="game-header">
         <button @click="goBack" class="back-button">← 返回首页</button>
       </div>
+      
+      <!-- 游戏区域 -->
       <div class="game-layout">
         <div class="game-main">
-          <SnakeBoard />
+          <TetrisBoard />
         </div>
       </div>
     </div>
@@ -15,13 +17,13 @@
 
 <script setup lang="ts">
 /**
- * 贪吃蛇游戏视图组件
- * 贪吃蛇游戏主页面
+ * 俄罗斯方块游戏视图组件
+ * 俄罗斯方块游戏主页面
  */
 
 import { onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import SnakeBoard from '@/components/games/Snake/SnakeBoard.vue';
+import TetrisBoard from '@/components/games/Tetris/TetrisBoard.vue';
 
 // 路由实例
 const router = useRouter();
@@ -43,7 +45,7 @@ onMounted(() => {
     const message = event.data;
     
     // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
-    if (message.type === 'close-game' && message.gameRoute !== '/game/snake') {
+    if (message.type === 'close-game' && message.gameRoute !== '/game/tetris') {
       channel.close();
       window.close();
     }
@@ -58,10 +60,10 @@ onMounted(() => {
 
 <style scoped>
 /**
- * 贪吃蛇游戏视图样式
+ * 俄罗斯方块游戏视图样式
  */
 
-.snake-view {
+.tetris-view {
   min-height: calc(100vh - 8rem);
   padding: var(--spacing-8) 0;
 }
@@ -90,7 +92,7 @@ onMounted(() => {
 .game-layout {
   display: flex;
   justify-content: center;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
@@ -100,7 +102,7 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 640px) {
-  .snake-view {
+  .tetris-view {
     padding: var(--spacing-4) 0;
   }
 }

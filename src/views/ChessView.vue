@@ -1,10 +1,10 @@
 <template>
-  <div class="gomoku-view">
+  <div class="chess-view">
     <div class="container">
       <div class="game-header">
         <button @click="goBack" class="back-button">← 返回首页</button>
       </div>
-      
+
       <!-- 游戏模式选择器 -->
       <div v-if="!gameStarted" class="mode-selector">
         <div class="mode-selector-content">
@@ -17,7 +17,7 @@
             >
               <div class="mode-icon">👥</div>
               <div class="mode-name">双人对战</div>
-              <div class="mode-desc">两个玩家轮流下棋</div>
+              <div class="mode-desc">白方 vs 黑方</div>
             </button>
             <button
               class="mode-button"
@@ -26,50 +26,65 @@
             >
               <div class="mode-icon">🤖</div>
               <div class="mode-name">人机对战</div>
-              <div class="mode-desc">与AI对战，挑战智能AI</div>
+              <div class="mode-desc">与AI对战</div>
             </button>
           </div>
-          <div v-if="gameMode === GameMode.PVE" class="first-player-info">
-            <div class="first-player-icon">🎲</div>
-            <div class="first-player-text">{{ firstPlayerText }}</div>
+
+          <!-- AI难度选择 -->
+          <div v-if="gameMode === GameMode.PVE" class="ai-difficulty-selector">
+            <div class="difficulty-label">AI 难度</div>
+            <div class="difficulty-buttons">
+              <button
+                class="difficulty-button"
+                :class="{ 'difficulty-button--active': aiDifficulty === AIDifficulty.EASY }"
+                @click="handleDifficultySelect(AIDifficulty.EASY)"
+              >
+                简单
+              </button>
+              <button
+                class="difficulty-button"
+                :class="{ 'difficulty-button--active': aiDifficulty === AIDifficulty.MEDIUM }"
+                @click="handleDifficultySelect(AIDifficulty.MEDIUM)"
+              >
+                中等
+              </button>
+              <button
+                class="difficulty-button"
+                :class="{ 'difficulty-button--active': aiDifficulty === AIDifficulty.HARD }"
+                @click="handleDifficultySelect(AIDifficulty.HARD)"
+              >
+                困难
+              </button>
+            </div>
           </div>
+
           <button class="start-game-button" @click="handleStartGame">
             开始游戏
           </button>
         </div>
       </div>
-      
+
       <!-- 游戏区域 -->
       <div v-else class="game-layout">
         <div class="game-main">
-          <GomokuBoard />
+          <ChessBoard />
         </div>
       </div>
-      
-      <!-- 棋色提示 -->
-      <Transition name="fade">
-        <div v-if="showColorHint" class="color-hint-overlay">
-          <div class="color-hint-content">
-            <div class="color-hint-icon">{{ playerColorIcon }}</div>
-            <div class="color-hint-text">{{ playerColorText }}</div>
-          </div>
-        </div>
-      </Transition>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * 五子棋游戏视图组件
- * 五子棋游戏主页面
+ * 国际象棋游戏视图组件
+ * 国际象棋游戏主页面
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import GomokuBoard from '@/components/games/Gomoku/GomokuBoard.vue';
-import { useGomokuGame } from '@/composables/useGomokuGame';
-import { GameMode, Player } from '@/constants/gomokuConstants';
+import ChessBoard from '@/components/games/Chess/ChessBoard.vue';
+import { useChessGame } from '@/composables/useChessGame';
+import { GameMode, AIDifficulty } from '@/constants/chessConstants';
 
 // 路由实例
 const router = useRouter();
@@ -77,45 +92,15 @@ const router = useRouter();
 // 使用游戏逻辑
 const {
   gameMode,
-  aiPlayer,
+  aiDifficulty,
   startNewGame,
-} = useGomokuGame();
+  setAIDifficulty,
+} = useChessGame();
 
 /**
  * 游戏是否开始
  */
 const gameStarted = ref<boolean>(false);
-
-/**
- * 是否显示棋色提示
- */
-const showColorHint = ref<boolean>(false);
-
-/**
- * 先手信息
- */
-const firstPlayerText = computed((): string => {
-  if (gameMode.value !== GameMode.PVE) return '黑子先手';
-  if (!aiPlayer.value) return '黑子先手';
-  return aiPlayer.value === Player.BLACK ? 'AI先手（黑子）' : '你先手（黑子）';
-});
-
-/**
- * 玩家棋色图标
- */
-const playerColorIcon = computed((): string => {
-  if (gameMode.value !== GameMode.PVE || !aiPlayer.value) return '⚫';
-  return aiPlayer.value === Player.WHITE ? '⚫' : '⚪';
-});
-
-/**
- * 玩家棋色文本
- */
-const playerColorText = computed((): string => {
-  if (gameMode.value !== GameMode.PVE) return '双人对战模式';
-  if (!aiPlayer.value) return '双人对战模式';
-  return aiPlayer.value === Player.WHITE ? '你执黑棋（先手）' : '你执白棋（后手）';
-});
 
 /**
  * 处理游戏模式选择
@@ -125,19 +110,19 @@ function handleModeSelect(mode: GameMode): void {
 }
 
 /**
+ * 处理AI难度选择
+ */
+function handleDifficultySelect(difficulty: AIDifficulty): void {
+  aiDifficulty.value = difficulty;
+  setAIDifficulty(difficulty);
+}
+
+/**
  * 处理开始游戏
  */
 function handleStartGame(): void {
   gameStarted.value = true;
   startNewGame();
-  
-  // 人机对战模式下显示棋色提示
-  if (gameMode.value === GameMode.PVE) {
-    showColorHint.value = true;
-    setTimeout(() => {
-      showColorHint.value = false;
-    }, 3000);
-  }
 }
 
 /**
@@ -146,36 +131,14 @@ function handleStartGame(): void {
 function goBack(): void {
   router.push('/');
 }
-
-/**
- * 组件挂载时监听 BroadcastChannel
- */
-onMounted(() => {
-  const channel = new BroadcastChannel('woodcat-games');
-  
-  channel.onmessage = (event) => {
-    const message = event.data;
-    
-    // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
-    if (message.type === 'close-game' && message.gameRoute !== '/game/gomoku') {
-      channel.close();
-      window.close();
-    }
-  };
-  
-  // 在组件卸载时清理
-  onUnmounted(() => {
-    channel.close();
-  });
-});
 </script>
 
 <style scoped>
 /**
- * 五子棋游戏视图样式
+ * 国际象棋游戏视图样式
  */
 
-.gomoku-view {
+.chess-view {
   min-height: calc(100vh - 8rem);
   padding: var(--spacing-8) 0;
 }
@@ -204,7 +167,7 @@ onMounted(() => {
 .game-layout {
   display: flex;
   justify-content: center;
-  max-width: 700px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -293,33 +256,57 @@ onMounted(() => {
   text-align: center;
 }
 
-.first-player-info {
+/* AI难度选择器 */
+.ai-difficulty-selector {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4) var(--spacing-6);
-  background-color: var(--color-gray-100);
-  border-radius: var(--radius-md);
+  gap: var(--spacing-4);
   animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.first-player-icon {
-  font-size: 1.5rem;
-}
-
-.first-player-text {
+.difficulty-label {
   font-size: var(--font-size-base);
   font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+.difficulty-buttons {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+.difficulty-button {
+  padding: var(--spacing-3) var(--spacing-6);
+  background-color: var(--color-white);
   color: var(--color-black);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: var(--border-width-thin) solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.difficulty-button:hover {
+  border-color: var(--color-black);
+}
+
+.difficulty-button--active {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
 }
 
 .start-game-button {
@@ -345,60 +332,9 @@ onMounted(() => {
   transform: translateY(0);
 }
 
-/* 棋色提示 */
-.color-hint-overlay {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000;
-}
-
-.color-hint-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-8) var(--spacing-10);
-  background-color: var(--color-white);
-  border: var(--border-width-thick) solid var(--color-black);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
-}
-
-.color-hint-icon {
-  font-size: 4rem;
-  animation: bounce 0.5s ease;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.color-hint-text {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-black);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
 /* 响应式设计 */
 @media (max-width: 640px) {
-  .gomoku-view {
+  .chess-view {
     padding: var(--spacing-4) 0;
   }
 
@@ -430,6 +366,10 @@ onMounted(() => {
 
   .mode-desc {
     font-size: var(--font-size-xs);
+  }
+
+  .difficulty-buttons {
+    flex-direction: column;
   }
 
   .start-game-button {

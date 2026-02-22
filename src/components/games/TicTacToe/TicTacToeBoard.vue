@@ -1,14 +1,18 @@
 <template>
-  <div class="gomoku-game">
+  <div class="tictactoe-game">
     <div class="game-header">
       <div class="score-info">
         <div class="score-item">
-          <span class="score-label">黑子</span>
-          <span class="score-value">{{ blackWins }}</span>
+          <span class="score-label">X</span>
+          <span class="score-value">{{ xWins }}</span>
         </div>
         <div class="score-item">
-          <span class="score-label">白子</span>
-          <span class="score-value">{{ whiteWins }}</span>
+          <span class="score-label">平局</span>
+          <span class="score-value">{{ draws }}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">O</span>
+          <span class="score-value">{{ oWins }}</span>
         </div>
       </div>
       <div class="status-text">{{ statusText }}</div>
@@ -17,40 +21,14 @@
     <div class="game-board">
       <div class="board-container">
         <div class="board">
-          <!-- 棋盘网格 -->
-          <div class="grid-lines">
-            <div
-              v-for="i in 15"
-              :key="`h-${i}`"
-              class="grid-line grid-line-horizontal"
-              :style="{ top: `${((i - 1) / 14) * 100}%` }"
-            ></div>
-            <div
-              v-for="i in 15"
-              :key="`v-${i}`"
-              class="grid-line grid-line-vertical"
-              :style="{ left: `${((i - 1) / 14) * 100}%` }"
-            ></div>
-          </div>
-          
-          <!-- 交叉点（点击区域和棋子） -->
           <div
-            v-for="(row, rowIndex) in board"
-            :key="`row-${rowIndex}`"
+            v-for="(cell, index) in board"
+            :key="index"
+            class="cell"
+            :class="{ 'cell-x': cell === Cell.X, 'cell-o': cell === Cell.O }"
+            @click="handleCellClick(index)"
           >
-            <div
-              v-for="(cell, colIndex) in row"
-              :key="`cell-${rowIndex}-${colIndex}`"
-              class="intersection"
-              :style="getIntersectionStyle(rowIndex, colIndex)"
-              @click="handleCellClick(rowIndex, colIndex)"
-            >
-              <div
-                v-if="cell !== Player.EMPTY"
-                class="stone"
-                :class="{ 'stone-black': cell === Player.BLACK, 'stone-white': cell === Player.WHITE }"
-              ></div>
-            </div>
+            {{ cell }}
           </div>
         </div>
       </div>
@@ -76,43 +54,31 @@
 
 <script setup lang="ts">
 /**
- * 五子棋游戏棋盘组件
+ * 井字棋游戏棋盘组件
  * 显示游戏棋盘和棋子
  */
 
-import { onMounted } from 'vue';
-import { useGomokuGame } from '@/composables/useGomokuGame';
-import { Player, GameState } from '@/constants/gomokuConstants';
+import { useTicTacToeGame } from '@/composables/useTicTacToeGame';
+import { Cell, GameState } from '@/constants/ticTacToeConstants';
 
 // 使用游戏逻辑
 const {
   board,
   gameState,
-  blackWins,
-  whiteWins,
+  xWins,
+  oWins,
+  draws,
   statusText,
   placePiece,
   startNewGame,
   resetAllStats,
-  initBoard,
-} = useGomokuGame();
-
-/**
- * 获取交叉点样式
- */
-function getIntersectionStyle(row: number, col: number): Record<string, string> {
-  return {
-    left: `${3 + (col / 14) * 94}%`,
-    top: `${3 + (row / 14) * 94}%`,
-    transform: 'translate(-50%, -50%)',
-  };
-}
+} = useTicTacToeGame();
 
 /**
  * 处理单元格点击
  */
-function handleCellClick(row: number, col: number): void {
-  placePiece(row, col);
+function handleCellClick(index: number): void {
+  placePiece(index);
 }
 
 /**
@@ -128,22 +94,14 @@ function handleNewGame(): void {
 function handleResetAll(): void {
   resetAllStats();
 }
-
-// 组件挂载时初始化棋盘（如果棋盘为空）
-onMounted(() => {
-  // 如果棋盘为空，只初始化棋盘，不重新初始化游戏状态
-  if (board.value.length === 0) {
-    initBoard();
-  }
-});
 </script>
 
 <style scoped>
 /**
- * 五子棋游戏棋盘组件样式
+ * 井字棋游戏棋盘组件样式
  */
 
-.gomoku-game {
+.tictactoe-game {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
@@ -196,84 +154,43 @@ onMounted(() => {
 
 .board-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 400px;
   aspect-ratio: 1 / 1;
 }
 
 .board {
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   width: 100%;
   height: 100%;
-  background-color: var(--color-white);
-  border: var(--border-width-medium) solid var(--color-black);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  background-color: var(--color-black);
+  border: var(--border-width-thick) solid var(--color-black);
+  border-radius: var(--radius-md);
+  gap: var(--border-width-thick);
 }
 
-/* 棋盘网格 */
-.grid-lines {
-  position: absolute;
-  inset: 3%;
-  pointer-events: none;
-}
-
-.grid-line {
-  position: absolute;
-  background-color: var(--color-gray-300);
-}
-
-.grid-line-horizontal {
-  left: 0;
-  right: 0;
-  height: 1px;
-}
-
-.grid-line-vertical {
-  top: 0;
-  bottom: 0;
-  width: 1px;
-}
-
-/* 交叉点（点击区域和棋子位置） */
-.intersection {
-  position: absolute;
+.cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 8%;
-  height: 8%;
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-  z-index: 10;
-}
-
-.intersection:hover::before {
-  content: '';
-  position: absolute;
-  width: 50%;
-  height: 50%;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-}
-
-/* 棋子 */
-.stone {
-  width: 80%;
-  height: 80%;
-  border-radius: 50%;
-  transition: all var(--transition-fast);
-  z-index: 20;
-}
-
-.stone-black {
-  background-color: var(--color-black);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-}
-
-.stone-white {
+  font-size: 4rem;
+  font-weight: 800;
   background-color: var(--color-white);
-  border: 2px solid var(--color-gray-300);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cell:hover {
+  background-color: var(--color-gray-100);
+}
+
+.cell-x {
+  color: var(--color-black);
+}
+
+.cell-o {
+  color: var(--color-black);
 }
 
 /* 游戏结束遮罩 */
@@ -377,6 +294,10 @@ onMounted(() => {
 
   .board-container {
     max-width: 100%;
+  }
+
+  .cell {
+    font-size: 3rem;
   }
 
   .game-over-buttons {
