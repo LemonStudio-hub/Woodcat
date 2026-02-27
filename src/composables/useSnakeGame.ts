@@ -246,11 +246,16 @@ export function useSnakeGame() {
     if (newHead.x === food.value.x && newHead.y === food.value.y) {
       score.value += 10;
       generateFood();
+      // 增强吃食物的音效和震动
       audioService.play(SoundType.EAT);
-      vibrationService.vibrate(VibrationType.EAT);
+      vibrationService.vibrateCustom([0, 80, 30, 80]);
     } else {
       // 没吃到食物，移除尾部
       snake.value.pop();
+      // 移动时添加轻微震动反馈
+      if (snake.value.length % 5 === 0) {
+        vibrationService.vibrate(VibrationType.MOVE);
+      }
     }
   }
   
@@ -336,7 +341,8 @@ export function useSnakeGame() {
     isPlaying.value = false;
     isGameOver.value = true;
     audioService.play(SoundType.CRASH);
-    vibrationService.vibrate(VibrationType.CRASH);
+    // 增强碰撞时的震动反馈
+    vibrationService.vibrateCustom([0, 150, 50, 150, 50, 200]);
     
     if (gameLoop) {
       clearInterval(gameLoop);

@@ -4,7 +4,7 @@
       <div class="score-info">
         <div class="score-item">
           <span class="score-label">分数</span>
-          <span class="score-value">{{ score }}</span>
+          <span class="score-value" :class="{ 'increase': scoreIncrease }">{{ score }}</span>
         </div>
         <div class="score-item">
           <span class="score-label">最高分</span>
@@ -30,11 +30,18 @@
             class="snake-segment"
             :class="{ 'snake-head': index === 0 }"
             :style="getSegmentStyle(segment)"
-          ></div>
+          >
+            <!-- 蛇头眼睛 -->
+            <div v-if="index === 0" class="snake-eyes">
+              <div class="eye eye-left"></div>
+              <div class="eye eye-right"></div>
+            </div>
+          </div>
           
           <!-- 食物 -->
           <div
             class="food"
+            :class="{ 'food-eaten': foodEaten }"
             :style="getFoodStyle()"
           ></div>
 
@@ -68,7 +75,7 @@
  * 显示游戏棋盘和蛇的移动
  */
 
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import Hammer from 'hammerjs';
 import { useSnakeGame } from '@/composables/useSnakeGame';
 import { Direction } from '@/constants/snakeConstants';
@@ -89,6 +96,10 @@ const {
 
 // 棋盘引用
 const boardRef = ref<HTMLElement | null>(null);
+
+// 动画状态
+const foodEaten = ref(false);
+const scoreIncrease = ref(false);
 
 // Hammer 实例
 let hammer: any = null;
@@ -118,6 +129,18 @@ function getFoodStyle(): Record<string, string> {
     height: `${cellSize}%`,
   };
 }
+
+// 监听分数变化
+watch(() => score.value, (newScore, oldScore) => {
+  if (newScore > oldScore) {
+    scoreIncrease.value = true;
+    foodEaten.value = true;
+    setTimeout(() => {
+      scoreIncrease.value = false;
+      foodEaten.value = false;
+    }, 300);
+  }
+});
 
 /**
  * 处理开始游戏
@@ -226,6 +249,21 @@ onUnmounted(() => {
   font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--color-black);
+  transition: transform 0.2s ease;
+}
+
+.score-value.increase {
+  animation: scorePop 0.3s ease-out;
+  color: var(--color-green-600);
+}
+
+@keyframes scorePop {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .status-text {
@@ -283,23 +321,91 @@ onUnmounted(() => {
 /* 蛇身片段 */
 .snake-segment {
   position: absolute;
-  background-color: var(--color-black);
+  background: linear-gradient(135deg, #000000 0%, #333333 100%);
   border-radius: 2px;
   transition: all 0.05s linear;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .snake-head {
-  background-color: var(--color-gray-900);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* 蛇头眼睛 */
+.snake-eyes {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: #fff;
+  border-radius: 50%;
+  animation: blink 3s ease-in-out infinite;
+}
+
+.eye-left {
+  left: 20%;
+  top: 30%;
+}
+
+.eye-right {
+  right: 20%;
+  top: 30%;
+}
+
+@keyframes blink {
+  0%, 45%, 55%, 100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scaleY(0.1);
+  }
 }
 
 /* 食物 */
 .food {
   position: absolute;
-  background-color: var(--color-gray-600);
+  background: radial-gradient(circle at 30% 30%, #ff6b6b 0%, #c92a2a 100%);
   border-radius: 50%;
   transition: all 0.05s linear;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 10px rgba(201, 42, 42, 0.5), 0 0 20px rgba(201, 42, 42, 0.3);
+  animation: foodPulse 1.5s ease-in-out infinite;
+}
+
+.food-eaten {
+  animation: foodDisappear 0.3s ease-out forwards;
+}
+
+@keyframes foodPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(201, 42, 42, 0.5), 0 0 20px rgba(201, 42, 42, 0.3);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(201, 42, 42, 0.7), 0 0 30px rgba(201, 42, 42, 0.5);
+  }
+}
+
+@keyframes foodDisappear {
+  0% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
 }
 
 /* 开始遮罩 */
@@ -310,30 +416,48 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.5s ease;
 }
 
 .start-button {
   padding: var(--spacing-4) var(--spacing-8);
-  background-color: var(--color-black);
+  background: linear-gradient(135deg, #000000 0%, #333333 100%);
   color: var(--color-white);
   font-size: var(--font-size-xl);
   font-weight: 700;
   border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
   border: none;
   cursor: pointer;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.start-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.start-button:hover::before {
+  left: 100%;
 }
 
 .start-button:hover {
-  background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
+  background: linear-gradient(135deg, #333333 0%, #666666 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .start-button:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 游戏结束遮罩 */
@@ -343,8 +467,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.8);
-  animation: fadeIn 0.3s ease;
+  background-color: rgba(0, 0, 0, 0.85);
+  animation: fadeIn 0.4s ease;
   z-index: 100;
 }
 
@@ -363,46 +487,107 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-4);
   padding: var(--spacing-8);
-  background-color: var(--color-white);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
   border-radius: var(--radius-xl);
   text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .game-over-icon {
-  font-size: 4rem;
+  font-size: 5rem;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
 }
 
 .game-over-title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   color: var(--color-black);
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
 }
 
 .game-over-score {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   color: var(--color-gray-600);
+  font-weight: 600;
 }
 
 .restart-button {
-  padding: var(--spacing-3) var(--spacing-8);
-  background-color: var(--color-black);
+  padding: var(--spacing-4) var(--spacing-8);
+  background: linear-gradient(135deg, #000000 0%, #333333 100%);
   color: var(--color-white);
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
   border: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.restart-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.restart-button:hover::before {
+  left: 100%;
 }
 
 .restart-button:hover {
-  background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #333333 0%, #666666 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .restart-button:active {
   transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 响应式设计 */
