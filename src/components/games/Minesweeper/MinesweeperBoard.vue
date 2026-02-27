@@ -14,11 +14,11 @@
       </div>
       <div class="status-display">
         <div class="status-item">
-          <span class="status-label">雷</span>
+          <span class="status-label">💣</span>
           <span class="status-value">{{ remainingMines }}</span>
         </div>
         <div class="status-item">
-          <span class="status-label">时间</span>
+          <span class="status-label">⏱️</span>
           <span class="status-value">{{ formatTime(gameTime) }}</span>
         </div>
       </div>
@@ -47,8 +47,8 @@
             @click.left="handleCellClick(cell)"
             @click.right.prevent="handleRightClick(cell)"
           >
-            <span v-if="cell.state === CellState.FLAGGED" class="cell-icon">旗</span>
-            <span v-else-if="cell.isMine && cell.state === CellState.REVEALED" class="cell-icon">雷</span>
+            <span v-if="cell.state === CellState.FLAGGED" class="cell-icon">🚩</span>
+            <span v-else-if="cell.isMine && cell.state === CellState.REVEALED" class="cell-icon">💣</span>
             <span v-else-if="cell.state === CellState.REVEALED && cell.adjacentMines > 0" class="cell-number" :class="`cell-number--${cell.adjacentMines}`">
               {{ cell.adjacentMines }}
             </span>
@@ -75,7 +75,7 @@
   <!-- 游戏结束遮罩 -->
   <div v-if="gameState !== GameState.PLAYING" class="game-over-overlay">
     <div class="game-over-content">
-            <div class="game-over-icon">{{ gameState === GameState.WON ? '胜利' : '失败' }}</div>
+            <div class="game-over-icon">{{ gameState === GameState.WON ? '🎉' : '💥' }}</div>
             <div class="game-over-title">{{ statusText }}</div>      <div class="game-over-info">
         <div>用时: {{ formatTime(gameTime) }}</div>
       </div>
@@ -447,9 +447,7 @@ function handleResetAll(): void {
 }
 
 .game-over-icon {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--color-black);
+  font-size: 4rem;
 }
 
 .game-over-title {
