@@ -261,7 +261,10 @@ class AudioService {
       if (!this.audioContext || !this.masterGain) return;
 
       const config = SOUND_CONFIGS[soundType];
-      if (!config) return;
+      if (!config) {
+        console.warn(`Unknown sound type: ${soundType}`);
+        return;
+      }
 
       // 恢复音频上下文（如果被挂起）
       if (this.audioContext.state === 'suspended') {
@@ -294,6 +297,12 @@ class AudioService {
       oscillator.stop(now + config.duration);
     } catch (error) {
       console.error('Failed to play sound:', error);
+      
+      // 禁用音效以避免持续报错
+      this.enabled = false;
+      
+      // 通知用户（如果有通知系统）
+      console.warn('音效播放失败，已自动关闭音效。请刷新页面或检查浏览器兼容性。');
     }
   }
 

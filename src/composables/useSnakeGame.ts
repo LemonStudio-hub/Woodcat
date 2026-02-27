@@ -3,7 +3,7 @@
  * 封装游戏核心逻辑
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
   BOARD_SIZE,
   INITIAL_SNAKE_LENGTH,
@@ -153,8 +153,19 @@ export function useSnakeGame() {
         // 恢复游戏状态
         snake.value = data.gameState.snake;
         food.value = data.gameState.food;
-        direction.value = data.gameState.direction as Direction;
-        nextDirection.value = data.gameState.direction as Direction;
+        
+        // 验证并恢复方向
+        const validDirections = Object.values(Direction);
+        const savedDirection = data.gameState.direction;
+        if (validDirections.includes(savedDirection as Direction)) {
+          direction.value = savedDirection as Direction;
+          nextDirection.value = savedDirection as Direction;
+        } else {
+          // 如果方向无效，使用默认方向
+          direction.value = Direction.RIGHT;
+          nextDirection.value = Direction.RIGHT;
+        }
+        
         isGameOver.value = data.gameState.gameOver;
         
         // 如果游戏没有结束，恢复游戏循环
@@ -186,15 +197,25 @@ export function useSnakeGame() {
     });
   }
 
-  // 监听分数和游戏状态变化，自动保存
-  watch([score, bestScore, snake, food, direction, isGameOver], () => {
+  // ========== 生命周期 ==========
+    
+  onMounted(() => {
+    // 加载游戏状态
+    loadGameState();
+  });
+  
+  onUnmounted(() => {
+    // 清理定时器
+    if (gameLoop) {
+      clearInterval(gameLoop);
+      gameLoop = null;
+    }
+    
+    // 清理状态
     if (isPlaying.value && !isGameOver.value) {
       saveGameState();
     }
-  }, { deep: true });
-
-  // 初始化时加载数据
-  loadGameState();
+  });
   
   // ========== 计算属性 ==========
   
@@ -373,21 +394,6 @@ export function useSnakeGame() {
     }
   }
   
-    // ========== 生命周期 ==========
-    
-    onMounted(() => {
-      // 清理定时器
-      if (gameLoop) {
-        clearInterval(gameLoop);
-      }
-    });
-    
-    onUnmounted(() => {
-      // 清理定时器
-      if (gameLoop) {
-        clearInterval(gameLoop);
-      }
-    });
   return {
     // 状态
     snake,

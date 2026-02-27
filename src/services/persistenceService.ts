@@ -196,9 +196,31 @@ class PersistenceService {
   private save<T>(key: string, data: T): void {
     try {
       const storageKey = `${STORAGE_PREFIX}${key}`;
-      localStorage.setItem(storageKey, JSON.stringify(data));
+      const serialized = JSON.stringify(data);
+      
+      // 检查数据大小
+      if (serialized.length > 5 * 1024 * 1024) { // 5MB
+        console.warn(`Data too large for ${key}, skipping save`);
+        return;
+      }
+      
+      localStorage.setItem(storageKey, serialized);
     } catch (error) {
-      console.error(`Failed to save data for ${key}:`, error);
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.error('Storage quota exceeded, clearing old data');
+        // 清除当前数据
+        this.clear(key);
+        // 尝试再次保存
+        try {
+          const storageKey = `${STORAGE_PREFIX}${key}`;
+          const serialized = JSON.stringify(data);
+          localStorage.setItem(storageKey, serialized);
+        } catch (retryError) {
+          console.error(`Failed to save data for ${key} after clearing:`, retryError);
+        }
+      } else {
+        console.error(`Failed to save data for ${key}:`, error);
+      }
     }
   }
 

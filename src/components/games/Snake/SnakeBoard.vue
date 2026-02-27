@@ -102,7 +102,7 @@ const foodEaten = ref(false);
 const scoreIncrease = ref(false);
 
 // Hammer 实例
-let hammer: any = null;
+let hammer: HammerManager | null = null;
 
 /**
  * 获取蛇身片段样式
