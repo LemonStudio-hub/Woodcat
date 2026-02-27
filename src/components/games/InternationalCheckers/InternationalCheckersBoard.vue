@@ -289,11 +289,11 @@ function handleResetAll(): void {
 }
 
 .board-cell--dark {
-  background-color: var(--color-gray-800);
+  background-color: #8B4513;
 }
 
 .board-cell--light {
-  background-color: var(--color-gray-100);
+  background-color: #F5F5DC;
 }
 
 .valid-move-hint {
