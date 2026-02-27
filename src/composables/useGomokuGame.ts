@@ -12,7 +12,7 @@ import {
 } from '@/constants/gomokuConstants';
 import { persistenceService } from '@/services/persistenceService';
 import { audioService, SoundType } from '@/services/audioService';
-import { vibrationService, VibrationType } from '@/services/vibrationService';
+import { vibrationService } from '@/services/vibrationService';
 
 /**
  * 五子棋游戏逻辑
@@ -54,6 +54,11 @@ export function useGomokuGame() {
    * 白子获胜次数
    */
   const whiteWins = ref<number>(0);
+  
+  /**
+   * 获胜连线（游戏结束时显示获胜的五子连线）
+   */
+  const winningLine = ref<Array<{ row: number; col: number }>>([]);
 
   // ========== 持久化 ==========
 
@@ -382,6 +387,7 @@ export function useGomokuGame() {
     
     for (const direction of directions) {
       let count = 1;
+      const line: Array<{ row: number; col: number }> = [{ row, col }];
       
       for (const [dx, dy] of direction) {
         let r = row + dx;
@@ -395,12 +401,14 @@ export function useGomokuGame() {
           board.value[r][c] === player
         ) {
           count++;
+          line.push({ row: r, col: c });
           r += dx;
           c += dy;
         }
       }
       
       if (count >= 5) {
+        winningLine.value = line;
         return true;
       }
     }
@@ -471,10 +479,10 @@ export function useGomokuGame() {
     // 播放落子音效和震动
     if (currentPlayer.value === Player.BLACK) {
       audioService.play(SoundType.PLACE_BLACK);
-      vibrationService.vibrate(VibrationType.PLACE_BLACK);
+      vibrationService.vibrateCustom([30]);
     } else {
       audioService.play(SoundType.PLACE_WHITE);
-      vibrationService.vibrate(VibrationType.PLACE_WHITE);
+      vibrationService.vibrateCustom([25]);
     }
 
     // 检查是否获胜
@@ -492,7 +500,7 @@ export function useGomokuGame() {
       }
 
       audioService.play(SoundType.WIN);
-      vibrationService.vibrate(VibrationType.WIN);
+      vibrationService.vibrateCustom([100, 50, 100, 50, 150]);
       console.log('placePiece: player won');
       // 确保游戏结束时重置思考状态
       isAIThinking.value = false;
@@ -503,7 +511,7 @@ export function useGomokuGame() {
     if (checkDraw()) {
       gameState.value = GameState.DRAW;
       audioService.play(SoundType.DRAW);
-      vibrationService.vibrate(VibrationType.DRAW);
+      vibrationService.vibrateCustom([50, 30, 50, 30, 50]);
       console.log('placePiece: draw');
       // 确保游戏结束时重置思考状态
       isAIThinking.value = false;
@@ -542,6 +550,7 @@ export function useGomokuGame() {
     initBoard();
     gameState.value = GameState.PLAYING;
     isAIThinking.value = false;
+    winningLine.value = []; // 清空获胜连线
 
     // 黑棋始终先手
     currentPlayer.value = Player.BLACK;
@@ -617,6 +626,7 @@ export function useGomokuGame() {
     blackWins,
     whiteWins,
     isAIThinking,
+    winningLine,
     statusText,
     // 方法
     placePiece,

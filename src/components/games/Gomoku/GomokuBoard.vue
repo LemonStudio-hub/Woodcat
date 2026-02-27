@@ -48,7 +48,11 @@
               <div
                 v-if="cell !== Player.EMPTY"
                 class="stone"
-                :class="{ 'stone-black': cell === Player.BLACK, 'stone-white': cell === Player.WHITE }"
+                :class="{ 
+                  'stone-black': cell === Player.BLACK, 
+                  'stone-white': cell === Player.WHITE,
+                  'stone-winning': isInWinningLine(rowIndex, colIndex)
+                }"
               ></div>
             </div>
           </div>
@@ -90,12 +94,20 @@ const {
   gameState,
   blackWins,
   whiteWins,
+  winningLine,
   statusText,
   placePiece,
   startNewGame,
   resetAllStats,
   initBoard,
 } = useGomokuGame();
+
+/**
+ * 检查位置是否在获胜连线上
+ */
+function isInWinningLine(row: number, col: number): boolean {
+  return winningLine.value.some(pos => pos.row === row && pos.col === col);
+}
 
 /**
  * 获取交叉点样式
@@ -243,7 +255,7 @@ onMounted(() => {
   width: 8%;
   height: 8%;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
   z-index: 10;
 }
 
@@ -252,8 +264,20 @@ onMounted(() => {
   position: absolute;
   width: 50%;
   height: 50%;
-  background-color: rgba(0, 0, 0, 0.1);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.15) 0%, transparent 70%);
   border-radius: 50%;
+  animation: hoverPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes hoverPulse {
+  from {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 1;
+  }
 }
 
 /* 棋子 */
@@ -261,19 +285,141 @@ onMounted(() => {
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  transition: all var(--transition-fast);
   z-index: 20;
+  animation: stoneDropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes stoneDropIn {
+  0% {
+    transform: scale(0) translateY(-50%);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
 .stone-black {
-  background-color: var(--color-black);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(circle at 30% 30%, #4a4a4a 0%, #000000 100%);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.stone-black::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 30%;
+  height: 30%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: stoneShine 2s ease-in-out infinite;
+}
+
+@keyframes stoneShine {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
 }
 
 .stone-white {
-  background-color: var(--color-white);
-  border: 2px solid var(--color-gray-300);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0e0e0 100%);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(200, 200, 200, 0.5);
+  position: relative;
+}
+
+.stone-white::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: stoneShine 2s ease-in-out infinite 0.5s;
+}
+
+/* 获胜连线棋子高亮 */
+.stone-winning {
+  animation: winningPulse 1s ease-in-out infinite;
+  position: relative;
+}
+
+.stone-winning::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #ff6b6b,
+    #ffd93d,
+    #6bcb77,
+    #4d96ff,
+    #ff6b6b
+  );
+  animation: winningGlow 2s linear infinite;
+  z-index: -1;
+  filter: blur(3px);
+}
+
+.stone-winning.stone-black::before {
+  background: conic-gradient(
+    from 0deg,
+    #ff4757,
+    #ffa502,
+    #2ed573,
+    #1e90ff,
+    #ff4757
+  );
+}
+
+.stone-winning.stone-white::before {
+  background: conic-gradient(
+    from 0deg,
+    #e74c3c,
+    #f39c12,
+    #27ae60,
+    #3498db,
+    #e74c3c
+  );
+}
+
+@keyframes winningPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes winningGlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 游戏结束遮罩 */
@@ -303,19 +449,58 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-4);
   padding: var(--spacing-8);
-  background-color: var(--color-white);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
   border-radius: var(--radius-xl);
   text-align: center;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .game-over-icon {
   font-size: 4rem;
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes iconPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.15);
+  }
 }
 
 .game-over-title {
   font-size: var(--font-size-2xl);
   font-weight: 800;
   color: var(--color-black);
+  animation: titleSlideIn 0.4s ease-out 0.2s both;
+}
+
+@keyframes titleSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .game-over-buttons {
@@ -334,6 +519,28 @@ onMounted(() => {
   transition: all var(--transition-fast);
   border: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.new-game-button::before,
+.reset-all-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.new-game-button:active::before,
+.reset-all-button:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 .reset-all-button {
@@ -345,19 +552,20 @@ onMounted(() => {
 .new-game-button:hover {
   background-color: var(--color-gray-800);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .reset-all-button:hover {
   background-color: var(--color-gray-100);
   border-color: var(--color-black);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
 .new-game-button:active,
 .reset-all-button:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 响应式设计 */

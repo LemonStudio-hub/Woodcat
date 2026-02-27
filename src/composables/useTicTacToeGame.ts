@@ -7,7 +7,7 @@ import { ref, computed, watch } from 'vue';
 import { Cell, GameState, WINNING_COMBINATIONS, BOARD_SIZE, GameMode } from '@/constants/ticTacToeConstants';
 import { persistenceService } from '@/services/persistenceService';
 import { audioService, SoundType } from '@/services/audioService';
-import { vibrationService, VibrationType } from '@/services/vibrationService';
+import { vibrationService } from '@/services/vibrationService';
 
 /**
  * 棋盘状态（一维数组）
@@ -48,6 +48,11 @@ const oWins = ref<number>(0);
  * 平局次数
  */
 const draws = ref<number>(0);
+
+/**
+ * 获胜连线（游戏结束时显示获胜的三子连线）
+ */
+const winningCombination = ref<number[] | null>(null);
 
 /**
  * 是否正在等待AI下棋
@@ -124,9 +129,13 @@ function initBoard(): void {
  * 检查是否获胜
  */
 function checkWin(boardState: Cell[], cell: Cell): boolean {
-  return WINNING_COMBINATIONS.some((combination) => {
-    return combination.every((index) => boardState[index] === cell);
-  });
+  for (const combination of WINNING_COMBINATIONS) {
+    if (combination.every((index) => boardState[index] === cell)) {
+      winningCombination.value = combination;
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -267,10 +276,10 @@ function placePiece(index: number, isAIMove: boolean = false): boolean {
   // 播放落子音效
   if (currentPlayer.value === Cell.X) {
     audioService.play(SoundType.PLACE_X);
-    vibrationService.vibrate(VibrationType.PLACE_X);
+    vibrationService.vibrateCustom([20]);
   } else {
     audioService.play(SoundType.PLACE_O);
-    vibrationService.vibrate(VibrationType.PLACE_O);
+    vibrationService.vibrateCustom([18]);
   }
 
   // 检查是否获胜
@@ -286,7 +295,7 @@ function placePiece(index: number, isAIMove: boolean = false): boolean {
     }
 
     audioService.play(SoundType.WIN);
-    vibrationService.vibrate(VibrationType.WIN);
+    vibrationService.vibrateCustom([100, 50, 100, 50, 150]);
     return true;
   }
 
@@ -295,7 +304,7 @@ function placePiece(index: number, isAIMove: boolean = false): boolean {
     gameState.value = GameState.DRAW;
     draws.value++;
     audioService.play(SoundType.DRAW);
-    vibrationService.vibrate(VibrationType.DRAW);
+    vibrationService.vibrateCustom([50, 30, 50, 30, 50]);
     return true;
   }
 
@@ -317,6 +326,7 @@ function startNewGame(): void {
   initBoard();
   gameState.value = GameState.PLAYING;
   isAIThinking.value = false;
+  winningCombination.value = null; // 清空获胜连线
 
   // X始终先手
   currentPlayer.value = Cell.X;
@@ -367,6 +377,7 @@ export function useTicTacToeGame() {
     oWins,
     draws,
     isAIThinking,
+    winningCombination,
     statusText,
     // 方法
     placePiece,

@@ -15,7 +15,7 @@ import {
 } from '@/constants/tetrisConstants';
 import { persistenceService } from '@/services/persistenceService';
 import { audioService, SoundType } from '@/services/audioService';
-import { vibrationService, VibrationType } from '@/services/vibrationService';
+import { vibrationService } from '@/services/vibrationService';
 
 /**
  * 当前方块位置和类型
@@ -57,6 +57,11 @@ export function useTetrisGame() {
    * 当前方块
    */
   const currentBlock = ref<CurrentBlock | null>(null);
+  
+  /**
+   * 正在消除的行（用于动画）
+   */
+  const clearingLines = ref<number[]>([]);
   
   /**
    * 游戏计时器
@@ -201,26 +206,35 @@ export function useTetrisGame() {
    * 消除完整的行
    */
   function clearLines(): void {
-    let linesCleared = 0;
+    const linesToClear: number[] = [];
     
+    // 找出所有需要消除的行
     for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
       const isFull = board.value[y].every((cell) => cell !== BlockType.EMPTY);
-      
       if (isFull) {
-        // 删除该行，在顶部添加新行
-        board.value.splice(y, 1);
-        board.value.unshift(new Array(BOARD_WIDTH).fill(BlockType.EMPTY));
-        linesCleared++;
-        y++; // 重新检查当前行，因为上面的行已经下移
+        linesToClear.push(y);
       }
     }
     
-    // 更新分数
-    if (linesCleared > 0) {
-      score.value += linesCleared * 100;
+    if (linesToClear.length > 0) {
+      // 标记需要消除的行，触发动画
+      clearingLines.value = linesToClear;
+      
       // 播放消除音效和震动
       audioService.play(SoundType.CLEAR);
-      vibrationService.vibrate(VibrationType.CLEAR);
+      vibrationService.vibrateCustom([80, 40, 80, 40, 100]);
+      
+      // 延迟后实际删除行
+      setTimeout(() => {
+        for (const y of linesToClear.sort((a, b) => b - a)) {
+          board.value.splice(y, 1);
+          board.value.unshift(new Array(BOARD_WIDTH).fill(BlockType.EMPTY));
+        }
+        clearingLines.value = [];
+        
+        // 更新分数
+        score.value += linesToClear.length * 100;
+      }, 300); // 等待动画完成
     }
   }
   
@@ -275,7 +289,7 @@ export function useTetrisGame() {
             stopGame();
             // 播放游戏结束音效和震动
             audioService.play(SoundType.GAME_OVER);
-            vibrationService.vibrate(VibrationType.GAME_OVER);
+            vibrationService.vibrateCustom([200, 100, 200, 100, 300]);
             return;
           }      
       // 创建新方块
@@ -321,19 +335,21 @@ export function useTetrisGame() {
       currentBlock.value = rotatedBlock;
       // 播放旋转音效和震动
       audioService.play(SoundType.ROTATE);
-      vibrationService.vibrate(VibrationType.ROTATE);
+      vibrationService.vibrateCustom([15]);
     } else if (!checkCollision(rotatedBlock, 1, 0)) {
       currentBlock.value = {
         ...rotatedBlock,
         x: rotatedBlock.x + 1,
       };
       audioService.play(SoundType.ROTATE);
+      vibrationService.vibrateCustom([15]);
     } else if (!checkCollision(rotatedBlock, -1, 0)) {
       currentBlock.value = {
         ...rotatedBlock,
         x: rotatedBlock.x - 1,
       };
       audioService.play(SoundType.ROTATE);
+      vibrationService.vibrateCustom([15]);
     }
   }
   
@@ -351,7 +367,7 @@ export function useTetrisGame() {
     
     // 播放下落音效和震动
     audioService.play(SoundType.DROP);
-    vibrationService.vibrate(VibrationType.DROP);
+    vibrationService.vibrateCustom([30]);
     
     // 固定方块到棋盘
     fixBlockToBoard(currentBlock.value);
@@ -423,6 +439,7 @@ export function useTetrisGame() {
     score,
     highScore,
     currentBlock,
+    clearingLines,
     statusText,
     // 方法
     moveBlock,

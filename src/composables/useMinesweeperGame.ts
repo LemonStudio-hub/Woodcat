@@ -228,7 +228,7 @@ export function useMinesweeperGame() {
     }
 
     audioService.play(SoundType.MOVE);
-    vibrationService.vibrate(VibrationType.MOVE);
+    vibrationService.vibrateCustom([10]);
 
     // 如果是空格，递归揭开相邻格子
     if (cell.adjacentMines === 0) {

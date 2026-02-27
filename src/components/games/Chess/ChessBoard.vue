@@ -355,7 +355,7 @@ function handleResetAll(): void {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), box-shadow 0.3s ease;
   aspect-ratio: 1 / 1;
 }
 
@@ -368,6 +368,8 @@ function handleResetAll(): void {
 }
 
 .valid-move-hint {
+  position: relative;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
   position: absolute;
   width: 30%;
   height: 30%;
@@ -377,6 +379,87 @@ function handleResetAll(): void {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+
+/* 棋子出现动画 */
+@keyframes pieceAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* 棋子选中动画 */
+@keyframes pieceSelect {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+/* 棋子吃子动画 */
+@keyframes pieceCapture {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.3) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+/* 按钮涟漪动画 */
+@keyframes buttonRipple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 弹入动画 */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 图标脉冲动画 */
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
 @keyframes pulse {
   0%, 100% {
     opacity: 0.3;
@@ -395,9 +478,10 @@ function handleResetAll(): void {
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), box-shadow 0.3s ease;
   cursor: pointer;
   user-select: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .piece--selected {
@@ -464,7 +548,7 @@ function handleResetAll(): void {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.8);
-  animation: fadeIn 0.3s ease;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   z-index: 200;
 }
 
@@ -510,7 +594,7 @@ function handleResetAll(): void {
   border: var(--border-width-medium) solid var(--color-gray-200);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), box-shadow 0.3s ease;
 }
 
 .promotion-button:hover {
@@ -527,7 +611,7 @@ function handleResetAll(): void {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.8);
-  animation: fadeIn 0.3s ease;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   z-index: 100;
 }
 
@@ -543,6 +627,7 @@ function handleResetAll(): void {
 }
 
 .game-over-icon {
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
   font-size: 4rem;
 }
 
@@ -557,7 +642,12 @@ function handleResetAll(): void {
   gap: var(--spacing-3);
 }
 
-.new-game-button,
+.new-game-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.reset-all-button,
 .reset-all-button {
   padding: var(--spacing-3) var(--spacing-6);
   background-color: var(--color-black);
@@ -565,7 +655,7 @@ function handleResetAll(): void {
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), box-shadow 0.3s ease;
   border: none;
   cursor: pointer;
 }

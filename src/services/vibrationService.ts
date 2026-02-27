@@ -68,10 +68,10 @@ const VIBRATION_CONFIGS: Record<VibrationType, VibrationConfig> = {
   
   // 2048 震动
   [VibrationType.MOVE]: {
-    pattern: [5],
+    pattern: [15, 10],
   },
   [VibrationType.MERGE]: {
-    pattern: [20, 10, 20],
+    pattern: [50, 30, 50, 30, 70],
   },
   [VibrationType.SCORE]: {
     pattern: [30],

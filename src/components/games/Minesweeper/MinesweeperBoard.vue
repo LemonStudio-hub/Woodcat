@@ -25,13 +25,14 @@
     </div>
 
     <div class="game-board">
-      <div class="board-container">
+      <div ref="boardContainerRef" class="board-container">
         <div
           class="board"
           :style="{ 
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
-            '--cell-size': cellSize
+            '--cell-size': cellSize,
+            ...boardTransform
           }"
         >
           <div
@@ -58,6 +59,17 @@
       </div>
     </div>
 
+    <div v-if="enablePanAndZoom" class="zoom-controls">
+      <div class="zoom-info">
+        <span>缩放: {{ zoomPercentage }}%</span>
+        <button class="zoom-reset" @click="resetMapView">重置</button>
+      </div>
+      <div class="zoom-buttons">
+        <button class="zoom-button" @click="handleZoomIn" :disabled="!canZoomIn">+</button>
+        <button class="zoom-button" @click="handleZoomOut" :disabled="!canZoomOut">-</button>
+      </div>
+    </div>
+    
     <div class="game-controls">
       <div class="control-info">
         <div class="status-text">{{ statusText }}</div>
@@ -98,7 +110,8 @@
  * 显示游戏棋盘和格子
  */
 
-import { computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import Hammer from 'hammerjs';
 import { useMinesweeperGame } from '@/composables/useMinesweeperGame';
 import {
   Difficulty,
@@ -131,6 +144,38 @@ const {
 
 // 初始化时加载数据
 loadStats();
+
+/**
+ * 地图缩放状态
+ */
+const scale = ref<number>(1);
+const minScale = 0.5;
+const maxScale = 2.0;
+
+/**
+ * 地图平移状态
+ */
+const translateX = ref<number>(0);
+const translateY = ref<number>(0);
+
+/**
+ * 地图容器引用
+ */
+const boardContainerRef = ref<HTMLElement | null>(null);
+
+/**
+ * Hammer.js 实例
+ */
+let hammer: any = null;
+
+/**
+ * 是否需要启用拖动和缩放
+ */
+const enablePanAndZoom = computed(() => {
+  // 简单模式不需要拖动和缩放
+  return difficulty.value !== Difficulty.EASY;
+});
+
 
 /**
  * 棋盘最大宽度（像素）
@@ -170,12 +215,123 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+
+
 /**
- * 处理难度变化
+ * 当前缩放百分比
  */
+const zoomPercentage = computed(() => Math.round(scale.value * 100));
+
+/**
+ * 是否可以放大
+ */
+const canZoomIn = computed(() => scale.value < maxScale);
+
+/**
+ * 是否可以缩小
+ */
+const canZoomOut = computed(() => scale.value > minScale);
+
+/**
+ * 更新地图变换样式
+ */
+const boardTransform = computed(() => {
+  return {
+    transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
+    transformOrigin: 'center center',
+    transition: 'transform 0.2s ease-out',
+  };
+});
+
+/**
+ * 重置地图视图
+ */
+function resetMapView(): void {
+  scale.value = 1;
+  translateX.value = 0;
+  translateY.value = 0;
+}
+
+/**
+ * 处理缩放按钮点击
+ */
+function handleZoomIn(): void {
+  if (scale.value < maxScale) {
+    scale.value = Math.min(scale.value + 0.25, maxScale);
+  }
+}
+
+function handleZoomOut(): void {
+  if (scale.value > minScale) {
+    scale.value = Math.max(scale.value - 0.25, minScale);
+  }
+}
+
+/**
+ * 初始化手势控制
+ */
+function initGestures(): void {
+  if (!boardContainerRef.value || !enablePanAndZoom.value) return;
+
+  const manager = new (Hammer as any).Manager(boardContainerRef.value);
+  hammer = manager;
+
+  // 启用平移和缩放手势
+  manager.get('pan').set({ direction: (Hammer as any).DIRECTION_ALL });
+  manager.get('pinch').set({ enable: true });
+
+  // 平移手势
+  manager.on('pan', (e: any) => {
+    translateX.value += e.deltaX;
+    translateY.value += e.deltaY;
+  });
+
+  // 缩放手势
+  manager.on('pinch', (e: any) => {
+    const newScale = scale.value * e.scale;
+    scale.value = Math.max(minScale, Math.min(newScale, maxScale));
+  });
+
+  // 双击重置视图
+  manager.on('doubletap', () => {
+    resetMapView();
+  });
+}
+
+/**
+ * 清理手势控制
+ */
+function destroyGestures(): void {
+  if (hammer) {
+    hammer.destroy();
+    hammer = null;
+  }
+}
+
+/**
+ * 组件挂载时初始化手势
+ */
+onMounted(() => {
+  if (enablePanAndZoom.value) {
+    // 延迟初始化以确保DOM已渲染
+    setTimeout(() => {
+      initGestures();
+    }, 100);
+  }
+});
+
+/**
+ * 组件卸载时清理手势
+ */
+onUnmounted(() => {
+  destroyGestures();
+});
+
+
 function handleDifficultyChange(newDifficulty: Difficulty): void {
   setDifficulty(newDifficulty);
   saveStats();
+  resetMapView();
 }
 
 /**
@@ -285,11 +441,77 @@ function handleResetAll(): void {
   min-width: 3ch;
 }
 
+
+/* 缩放控制 */
+.zoom-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-gray-100);
+  border-radius: var(--radius-lg);
+  gap: var(--spacing-3);
+}
+
+.zoom-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+.zoom-reset {
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: var(--color-white);
+  border: var(--border-width-thin) solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zoom-reset:hover {
+  background-color: var(--color-gray-200);
+  border-color: var(--color-black);
+}
+
+.zoom-buttons {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.zoom-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  background-color: var(--color-white);
+  border: var(--border-width-thin) solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zoom-button:hover:not(:disabled) {
+  background-color: var(--color-gray-200);
+  border-color: var(--color-black);
+  transform: translateY(-2px);
+}
+
+.zoom-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 游戏棋盘 */
 .game-board {
   display: flex;
   justify-content: center;
-  overflow-x: auto;
+  overflow: hidden;
   padding: var(--spacing-2);
   max-width: 100%;
 }
@@ -299,6 +521,8 @@ function handleResetAll(): void {
   flex-direction: column;
   max-width: min(90vw, 600px);
   width: min(90vw, 600px);
+  overflow: hidden;
+  position: relative;
 }
 
 .board {
@@ -308,6 +532,7 @@ function handleResetAll(): void {
   border: var(--border-width-medium) solid var(--color-gray-400);
   user-select: none;
   width: 100%;
+  touch-action: none;
 }
 
 .cell {
@@ -319,7 +544,9 @@ function handleResetAll(): void {
   font-size: var(--font-size-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .cell--hidden {
@@ -328,6 +555,15 @@ function handleResetAll(): void {
 
 .cell--hidden:hover {
   background-color: var(--color-gray-300);
+  animation: cellClick 0.3s ease-in-out;
+}
+
+.cell--revealed {
+  animation: cellReveal 0.3s ease-out;
+}
+
+.cell--flagged {
+  animation: flagPlace 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .cell--revealed {
@@ -345,9 +581,121 @@ function handleResetAll(): void {
 
 .cell--mine-exploded {
   background-color: var(--color-red-500);
-  animation: shake 0.5s ease-in-out;
+  animation: mineExplode 0.5s ease-in-out;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
 }
 
+
+/* 格子点击动画 */
+@keyframes cellClick {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+}
+
+/* 格子揭示动画 */
+@keyframes cellReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 旗帜放置动画 */
+@keyframes flagPlace {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-20deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* 地雷爆炸动画 */
+@keyframes mineExplode {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.5);
+    background-color: #ff6b6b;
+  }
+  50% {
+    transform: scale(0.8);
+    background-color: #ee5a6f;
+  }
+  75% {
+    transform: scale(1.2);
+    background-color: #f87171;
+  }
+  100% {
+    transform: scale(1);
+    background-color: #dc2626;
+  }
+}
+
+/* 按钮涟漪动画 */
+@keyframes buttonRipple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 弹入动画 */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 图标脉冲动画 */
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* 数字弹跳动画 */
+@keyframes numberBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+}
 @keyframes shake {
   0%, 100% {
     transform: translateX(0);
@@ -362,10 +710,12 @@ function handleResetAll(): void {
 
 .cell-icon {
   font-size: calc(var(--cell-size, 2.5rem) * 0.7);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
 }
 
 .cell-number {
   font-weight: 700;
+  animation: numberBounce 0.3s ease-out;
 }
 
 .cell-number--1 {
@@ -444,7 +794,7 @@ function handleResetAll(): void {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.8);
-  animation: fadeIn 0.3s ease;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   z-index: 100;
 }
 
@@ -470,6 +820,7 @@ function handleResetAll(): void {
 
 .game-over-icon {
   font-size: 4rem;
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
 }
 
 .game-over-title {

@@ -79,6 +79,7 @@ const {
   score,
   highScore,
   currentBlock,
+  clearingLines,
   statusText,
   moveBlock,
   rotateBlock,
@@ -106,6 +107,16 @@ const MIN_SWIPE_DISTANCE = 30;
  * 获取单元格样式
  */
 function getCellStyle(row: number, col: number): Record<string, string> {
+  // 检查是否是正在消除的行
+  const isClearing = clearingLines.value.includes(row);
+  if (isClearing) {
+    return {
+      background: `linear-gradient(135deg, ${BLOCK_COLORS[board.value[row][col]]} 0%, ${adjustColor(BLOCK_COLORS[board.value[row][col]], -20)} 100%)`,
+      boxShadow: `inset 2px 2px 4px rgba(255, 255, 255, 0.3), inset -2px -2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.2)`,
+      animation: 'lineClear 0.3s ease-out forwards',
+    };
+  }
+  
   // 检查是否是当前方块的一部分
   if (currentBlock.value) {
     const shape = currentBlock.value.shape;
@@ -120,7 +131,9 @@ function getCellStyle(row: number, col: number): Record<string, string> {
           
           if (cellRow === row && cellCol === col) {
             return {
-              backgroundColor: BLOCK_COLORS[currentBlock.value.type],
+              background: `linear-gradient(135deg, ${BLOCK_COLORS[currentBlock.value.type]} 0%, ${adjustColor(BLOCK_COLORS[currentBlock.value.type], -30)} 100%)`,
+              boxShadow: `inset 2px 2px 4px rgba(255, 255, 255, 0.3), inset -2px -2px 4px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.3)`,
+              animation: 'blockAppear 0.2s ease-out',
             };
           }
         }
@@ -132,7 +145,8 @@ function getCellStyle(row: number, col: number): Record<string, string> {
   const cellType = board.value[row][col];
   if (cellType !== BlockType.EMPTY) {
     return {
-      backgroundColor: BLOCK_COLORS[cellType],
+      background: `linear-gradient(135deg, ${BLOCK_COLORS[cellType]} 0%, ${adjustColor(BLOCK_COLORS[cellType], -20)} 100%)`,
+      boxShadow: `inset 2px 2px 4px rgba(255, 255, 255, 0.3), inset -2px -2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.2)`,
     };
   }
   
@@ -140,6 +154,17 @@ function getCellStyle(row: number, col: number): Record<string, string> {
   return {
     backgroundColor: 'var(--color-white)',
   };
+}
+
+/**
+ * 调整颜色亮度
+ */
+function adjustColor(color: string, amount: number): string {
+  const hex = color.replace('#', '');
+  const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+  const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+  const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 /**
@@ -321,7 +346,46 @@ onUnmounted(() => {
   font-size: 0.8rem;
   font-weight: 800;
   background-color: var(--color-white);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes blockAppear {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes blockFlash {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+@keyframes lineClear {
+  0% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleX(1.1);
+    opacity: 0.8;
+    filter: brightness(2);
+  }
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
 }
 
 /* 控制说明 */
@@ -360,7 +424,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.85);
   animation: fadeIn 0.3s ease;
   z-index: 100;
 }
@@ -380,13 +444,40 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-4);
   padding: var(--spacing-8);
-  background-color: var(--color-white);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
   border-radius: var(--radius-xl);
   text-align: center;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .game-over-icon {
   font-size: 4rem;
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes iconPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.15);
+  }
 }
 
 .game-over-title {
@@ -411,16 +502,37 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
   border: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.restart-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.restart-button:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 .restart-button:hover {
   background-color: var(--color-gray-800);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .restart-button:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 响应式设计 */

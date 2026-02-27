@@ -48,6 +48,14 @@ interface SoundConfig {
   volume: number;
   attack?: number;
   decay?: number;
+  sustain?: number;
+  release?: number;
+  additionalOscillators?: Array<{
+    frequency: number;
+    type: OscillatorType;
+    volume: number;
+    phaseOffset?: number;
+  }>;
 }
 
 /**
@@ -70,12 +78,18 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
     decay: 0.1,
   },
   [SoundType.WIN]: {
-    frequency: 880,
-    duration: 0.3,
+    frequency: 1047,
+    duration: 0.5,
     type: 'sine',
-    volume: 0.5,
+    volume: 0.6,
     attack: 0.01,
-    decay: 0.2,
+    decay: 0.15,
+    sustain: 0.2,
+    release: 0.14,
+    additionalOscillators: [
+      { frequency: 1319, type: 'triangle', volume: 0.3, phaseOffset: 0 },
+      { frequency: 523, type: 'sine', volume: 0.25, phaseOffset: Math.PI / 4 }
+    ]
   },
   [SoundType.LOSE]: {
     frequency: 220,
@@ -94,18 +108,32 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   
   // 2048 音效
   [SoundType.MOVE]: {
-    frequency: 400,
-    duration: 0.03,
+    frequency: 500,
+    duration: 0.12,
     type: 'sine',
-    volume: 0.2,
+    volume: 0.35,
+    attack: 0.02,
+    decay: 0.05,
+    sustain: 0.03,
+    release: 0.02,
+    additionalOscillators: [
+      { frequency: 800, type: 'triangle', volume: 0.2, phaseOffset: 0 },
+      { frequency: 250, type: 'sine', volume: 0.15, phaseOffset: Math.PI / 4 }
+    ]
   },
   [SoundType.MERGE]: {
-    frequency: 600,
-    duration: 0.08,
+    frequency: 750,
+    duration: 0.18,
     type: 'sine',
-    volume: 0.4,
-    attack: 0.01,
-    decay: 0.05,
+    volume: 0.5,
+    attack: 0.02,
+    decay: 0.08,
+    sustain: 0.05,
+    release: 0.03,
+    additionalOscillators: [
+      { frequency: 1500, type: 'triangle', volume: 0.25, phaseOffset: 0 },
+      { frequency: 375, type: 'sine', volume: 0.2, phaseOffset: Math.PI / 3 }
+    ]
   },
   [SoundType.SCORE]: {
     frequency: 700,
