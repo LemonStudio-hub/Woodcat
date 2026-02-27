@@ -14,25 +14,23 @@
         @click="handleChoice(choice.value)"
         :disabled="isPlaying"
       >
-        <span class="choice-emoji">{{ choice.emoji }}</span>
         <span class="choice-label">{{ choice.label }}</span>
       </button>
     </div>
 
     <div v-if="currentResult" class="result-section">
       <div class="result-display">
-        <span class="result-emoji">{{ resultEmoji() }}</span>
         <span class="result-text">{{ resultText() }}</span>
       </div>
       <div class="choices-comparison">
         <div class="comparison-item">
           <span class="comparison-label">你</span>
-          <span class="comparison-emoji">{{ choiceEmoji(playerChoice) }}</span>
+          <span class="comparison-choice">{{ choiceLabel(playerChoice) }}</span>
         </div>
         <span class="vs-text">VS</span>
         <div class="comparison-item">
           <span class="comparison-label">电脑</span>
-          <span class="comparison-emoji">{{ choiceEmoji(computerChoice) }}</span>
+          <span class="comparison-choice">{{ choiceLabel(computerChoice) }}</span>
         </div>
       </div>
       <p class="auto-reset-hint">{{ countdownText }}</p>
@@ -154,15 +152,6 @@ function handleChoice(choice: RPSChoice): void {
 }
 
 /**
- * 获取结果表情符号
- */
-function resultEmoji(): string {
-  if (!props.currentResult) return '';
-  const result = RPS_RESULT_MAP[props.currentResult];
-  return result?.emoji || '';
-}
-
-/**
  * 获取结果文本
  */
 function resultText(): string {
@@ -172,12 +161,12 @@ function resultText(): string {
 }
 
 /**
- * 获取选项表情符号
+ * 获取选项标签
  */
-function choiceEmoji(choice: RPSChoice | null): string {
+function choiceLabel(choice: RPSChoice | null): string {
   if (!choice) return '';
   const choiceData = RPS_CHOICE_MAP[choice as keyof typeof RPS_CHOICE_MAP];
-  return choiceData?.emoji || '';
+  return choiceData?.label || '';
 }
 
 /**
@@ -256,7 +245,6 @@ function handlePlayAgain(): void {
   transform: scale(1.05);
 }
 
-.choice-button--active .choice-emoji,
 .choice-button--active .choice-label {
   color: var(--color-white);
 }
@@ -264,10 +252,6 @@ function handlePlayAgain(): void {
 .choice-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.choice-emoji {
-  font-size: var(--font-size-3xl);
 }
 
 .choice-label {
@@ -304,10 +288,6 @@ function handlePlayAgain(): void {
   gap: var(--spacing-3);
 }
 
-.result-emoji {
-  font-size: var(--font-size-3xl);
-}
-
 .result-text {
   font-size: var(--font-size-2xl);
   font-weight: 700;
@@ -335,8 +315,10 @@ function handlePlayAgain(): void {
   font-weight: 600;
 }
 
-.comparison-emoji {
-  font-size: var(--font-size-4xl);
+.comparison-choice {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-black);
 }
 
 .vs-text {
@@ -406,10 +388,6 @@ function handlePlayAgain(): void {
     padding: var(--spacing-5) var(--spacing-3);
   }
 
-  .choice-emoji {
-    font-size: var(--font-size-2xl);
-  }
-
   .choice-label {
     font-size: var(--font-size-sm);
   }
@@ -424,20 +402,12 @@ function handlePlayAgain(): void {
     gap: var(--spacing-2);
   }
 
-  .result-emoji {
-    font-size: var(--font-size-2xl);
-  }
-
   .result-text {
     font-size: var(--font-size-lg);
   }
 
   .choices-comparison {
     gap: var(--spacing-4);
-  }
-
-  .comparison-emoji {
-    font-size: var(--font-size-3xl);
   }
 
   .play-again-button {
@@ -473,10 +443,6 @@ function handlePlayAgain(): void {
     padding: var(--spacing-4) var(--spacing-2);
   }
 
-  .choice-emoji {
-    font-size: var(--font-size-xl);
-  }
-
   .choice-label {
     font-size: var(--font-size-xs);
   }
@@ -487,16 +453,12 @@ function handlePlayAgain(): void {
     min-height: 150px;
   }
 
-  .result-emoji {
-    font-size: var(--font-size-xl);
-  }
-
   .result-text {
     font-size: var(--font-size-base);
   }
 
-  .comparison-emoji {
-    font-size: var(--font-size-2xl);
+  .comparison-choice {
+    font-size: var(--font-size-base);
   }
 
   .vs-text {

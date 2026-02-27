@@ -63,18 +63,18 @@ export const GAME_LIST: GameInfo[] = [
  * 石头剪刀布选项映射
  */
 export const RPS_CHOICE_MAP = {
-  rock: { label: '石头', emoji: '🪨' },
-  paper: { label: '布', emoji: '📄' },
-  scissors: { label: '剪刀', emoji: '✂️' },
+  rock: { label: '石头' },
+  paper: { label: '布' },
+  scissors: { label: '剪刀' },
 } as const;
 
 /**
  * 游戏结果映射
  */
 export const RPS_RESULT_MAP = {
-  win: { label: '胜利', emoji: '🎉' },
-  lose: { label: '失败', emoji: '😢' },
-  draw: { label: '平局', emoji: '🤝' },
+  win: { label: '胜利' },
+  lose: { label: '失败' },
+  draw: { label: '平局' },
 } as const;
 
 /**
