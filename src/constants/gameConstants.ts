@@ -12,7 +12,7 @@ export const GAME_LIST: GameInfo[] = [
   {
     id: 'rock-paper-scissors',
     name: '石头剪刀布',
-    description: '经典的三人对战游戏',
+    description: '经典双人对战游戏',
     route: '/game/rock-paper-scissors',
   },
   {
