@@ -79,7 +79,7 @@ export function useInternationalCheckersGame() {
   const chainJumpPiece = ref<Piece | null>(null);
 
   /**
-   * 红色获胜次数
+   * 白色获胜次数
    */
   const redWins = ref<number>(0);
 
@@ -422,7 +422,7 @@ export function useInternationalCheckersGame() {
    * 游戏状态文本
    */
   const statusText = computed((): string => {
-    if (gameState.value === GameState.RED_WINS) return '红色获胜！';
+    if (gameState.value === GameState.RED_WINS) return '白色获胜！';
     if (gameState.value === GameState.BLACK_WINS) return '黑色获胜！';
     if (gameState.value === GameState.DRAW) return '平局！';
 

@@ -37,7 +37,7 @@
               <div
                 v-if="isValidMoveTarget({ row: row - 1, col: col - 1 })"
                 class="valid-move-hint"
-                @click="handleValidMoveClick({ row: row - 1, col: col - 1 })"
+                @click.stop="handleValidMoveClick({ row: row - 1, col: col - 1 })"
               />
 
               <!-- 棋子 -->
@@ -50,7 +50,7 @@
                   'piece--king': getPieceAt({ row: row - 1, col: col - 1 })?.type === PieceType.KING,
                   'piece--selected': selectedPiece?.id === getPieceAt({ row: row - 1, col: col - 1 })?.id,
                 }"
-                @click="handlePieceClick(getPieceAt({ row: row - 1, col: col - 1 })!)"
+                @click.stop="handlePieceClick(getPieceAt({ row: row - 1, col: col - 1 })!)"
               >
                 <span v-if="getPieceAt({ row: row - 1, col: col - 1 })?.type === PieceType.KING" class="king-crown">👑</span>
               </div>
@@ -232,7 +232,7 @@ function handleResetAll(): void {
 }
 
 .score-label--red {
-  color: #ef4444;
+  color: #333333;
 }
 
 .score-label--black {
@@ -330,8 +330,8 @@ function handleResetAll(): void {
 }
 
 .piece--red {
-  background-color: #ef4444;
-  border: 2px solid rgba(0, 0, 0, 0.3);
+  background-color: #FFFFFF;
+  border: 2px solid rgba(0, 0, 0, 0.5);
 }
 
 .piece--black {

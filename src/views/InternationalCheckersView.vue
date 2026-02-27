@@ -17,7 +17,7 @@
             >
               <div class="mode-icon">👥</div>
               <div class="mode-name">双人对战</div>
-              <div class="mode-desc">红色 vs 黑色</div>
+              <div class="mode-desc">白色 vs 黑色</div>
             </button>
             <button
               class="mode-button"

@@ -35,7 +35,7 @@ export enum PieceType {
  */
 export const PLAYER_COLORS: Record<Player, string> = {
   [Player.EMPTY]: 'transparent',
-  [Player.RED]: '#ef4444',
+  [Player.RED]: '#FFFFFF',
   [Player.BLACK]: '#000000',
 };
 
@@ -44,7 +44,7 @@ export const PLAYER_COLORS: Record<Player, string> = {
  */
 export const PLAYER_NAMES: Record<Player, string> = {
   [Player.EMPTY]: '空',
-  [Player.RED]: '红色',
+  [Player.RED]: '白色',
   [Player.BLACK]: '黑色',
 };
 
