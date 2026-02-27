@@ -375,10 +375,10 @@ onUnmounted(() => {
 /* 食物 */
 .food {
   position: absolute;
-  background: radial-gradient(circle at 30% 30%, #ff6b6b 0%, #c92a2a 100%);
+  background: radial-gradient(circle at 30% 30%, #a3a3a3 0%, #666666 100%);
   border-radius: 50%;
   transition: all 0.05s linear;
-  box-shadow: 0 0 10px rgba(201, 42, 42, 0.5), 0 0 20px rgba(201, 42, 42, 0.3);
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.5), 0 0 20px rgba(102, 102, 102, 0.3);
   animation: foodPulse 1.5s ease-in-out infinite;
 }
 
