@@ -30,7 +30,8 @@
           class="board"
           :style="{ 
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gridTemplateRows: `repeat(${rows}, 1fr)`
+            gridTemplateRows: `repeat(${rows}, 1fr)`,
+            '--cell-size': `${Math.min(2.5, Math.max(1.5, 40 / cols))}rem`
           }"
         >
           <div
@@ -273,11 +274,14 @@ function handleResetAll(): void {
   display: flex;
   justify-content: center;
   overflow-x: auto;
+  padding: var(--spacing-2);
+  max-width: 100%;
 }
 
 .board-container {
   display: flex;
   flex-direction: column;
+  max-width: 100%;
 }
 
 .board {
@@ -286,11 +290,12 @@ function handleResetAll(): void {
   background-color: var(--color-gray-400);
   border: var(--border-width-medium) solid var(--color-gray-400);
   user-select: none;
+  max-width: 100%;
 }
 
 .cell {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--cell-size, 2.5rem);
+  height: var(--cell-size, 2.5rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,6 +303,10 @@ function handleResetAll(): void {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  max-width: 2.5rem;
+  max-height: 2.5rem;
 }
 
 .cell--hidden {
@@ -339,7 +348,7 @@ function handleResetAll(): void {
 }
 
 .cell-icon {
-  font-size: var(--font-size-lg);
+  font-size: calc(var(--cell-size, 2.5rem) * 0.7);
 }
 
 .cell-number {
