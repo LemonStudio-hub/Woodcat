@@ -236,15 +236,22 @@ export function use2048Game() {
     });
 
     if (moved) {
+      // 播放生成音效和震动
+      audioService.play(SoundType.SCORE);
+      vibrationService.vibrate(VibrationType.SCORE);
+      
+      // 添加新方块
       addRandomTile();
 
       // 播放音效和震动
       if (merged) {
         audioService.play(SoundType.MERGE);
-        vibrationService.vibrate(VibrationType.MERGE);
+        // 合并时使用更强的震动
+        vibrationService.vibrateCustom([0, 50, 30, 50]);
         if (game2048Store.gameWon) {
           audioService.play(SoundType.WIN);
-          vibrationService.vibrate(VibrationType.WIN);
+          // 胜利时使用欢快震动
+          vibrationService.vibrateCustom([0, 100, 50, 100, 50, 200, 50, 100]);
         }
       } else {
         audioService.play(SoundType.MOVE);
@@ -255,7 +262,8 @@ export function use2048Game() {
       if (!movesAvailable()) {
         game2048Store.setGameOver(true);
         audioService.play(SoundType.LOSE);
-        vibrationService.vibrate(VibrationType.LOSE);
+        // 失败时使用连续震动
+        vibrationService.vibrateCustom([0, 100, 50, 100, 50, 100]);
       }
     }
 

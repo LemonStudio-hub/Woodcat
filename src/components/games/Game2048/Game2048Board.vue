@@ -8,7 +8,7 @@
     <div class="score-container">
       <div class="score-box">
         <div class="score-label">分数</div>
-        <div class="score-value">{{ score }}</div>
+        <div class="score-value" :class="{ 'score-increase': scoreChanged }">{{ score }}</div>
       </div>
       <div class="score-box">
         <div class="score-label">最高分</div>
@@ -103,6 +103,20 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// 分数变化状态
+const scoreChanged = ref(false);
+
+// 监听分数变化
+import { watch } from 'vue';
+watch(() => props.score, (newScore, oldScore) => {
+  if (newScore > oldScore) {
+    scoreChanged.value = true;
+    setTimeout(() => {
+      scoreChanged.value = false;
+    }, 300);
+  }
+});
 
 // 定义 Emits
 interface Emits {
@@ -318,8 +332,9 @@ onUnmounted(() => {
   font-size: var(--font-size-2xl);
   font-weight: 800;
   border-radius: var(--radius-md);
-  transition: left 0.15s ease-in-out, top 0.15s ease-in-out;
+  transition: left 0.15s ease-in-out, top 0.15s ease-in-out, transform 0.15s ease-in-out;
   pointer-events: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 不同数值的方块颜色 */
@@ -380,23 +395,45 @@ onUnmounted(() => {
   font-size: var(--font-size-lg);
 }
 
+/* 分数增加动画 */
+.score-increase {
+  animation: scoreBounce 0.3s ease-out;
+}
+
+@keyframes scoreBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+    color: var(--color-green-600);
+  }
+}
+
 /* 新方块动画 */
 .tile-new {
-  animation: appear 0.2s ease-in-out;
+  animation: appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes appear {
-  from {
-    transform: scale(0);
+  0% {
+    transform: scale(0) rotate(-10deg);
+    opacity: 0;
   }
-  to {
-    transform: scale(1);
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
   }
 }
 
 /* 合并方块动画 */
 .tile-merged {
-  animation: pop 0.2s ease-in-out;
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 
 @keyframes pop {
@@ -404,10 +441,47 @@ onUnmounted(() => {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.2);
+    transform: scale(1.25);
   }
   100% {
     transform: scale(1);
+  }
+}
+
+/* 高价值方块光效 */
+.tile-1024,
+.tile-2048,
+.tile-4096,
+.tile-8192 {
+  position: relative;
+  overflow: hidden;
+}
+
+.tile-1024::after,
+.tile-2048::after,
+.tile-4096::after,
+.tile-8192::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%
+  );
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateY(50%) rotate(360deg);
   }
 }
 
@@ -420,7 +494,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.4s ease-in-out;
   z-index: 100;
 }
 
@@ -433,6 +507,10 @@ onUnmounted(() => {
   }
 }
 
+.game-won-overlay {
+  background-color: rgba(34, 197, 94, 0.9);
+}
+
 .overlay-content {
   display: flex;
   flex-direction: column;
@@ -442,38 +520,86 @@ onUnmounted(() => {
   background-color: var(--color-white);
   border-radius: var(--radius-xl);
   text-align: center;
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .overlay-title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   color: var(--color-black);
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
 }
 
 .overlay-subtitle {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-lg);
   color: var(--color-gray-500);
+  font-weight: 600;
 }
 
 .overlay-buttons {
   display: flex;
   gap: var(--spacing-3);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .overlay-button {
-  padding: var(--spacing-3) var(--spacing-6);
+  padding: var(--spacing-4) var(--spacing-8);
   background-color: var(--color-black);
   color: var(--color-white);
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.overlay-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.overlay-button:hover::before {
+  left: 100%;
 }
 
 .overlay-button:hover {
   background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .overlay-button-secondary {
@@ -494,24 +620,60 @@ onUnmounted(() => {
 }
 
 .control-button {
-  padding: var(--spacing-3) var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-8);
   background-color: var(--color-black);
   color: var(--color-white);
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.control-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.control-button:active::before {
+  width: 200%;
+  height: 200%;
 }
 
 .control-button:hover {
   background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.control-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .control-hint {
   font-size: var(--font-size-sm);
   color: var(--color-gray-500);
+  opacity: 0.8;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* 响应式设计 */
