@@ -10,7 +10,10 @@
         v-for="choice in choices"
         :key="choice.value"
         class="choice-button"
-        :class="{ 'choice-button--active': isSelected(choice.value) }"
+        :class="{ 
+          'choice-button--active': isSelected(choice.value),
+          'choice-button--shaking': isPlaying && isSelected(choice.value)
+        }"
         @click="handleChoice(choice.value)"
         :disabled="isPlaying"
       >
@@ -20,17 +23,17 @@
 
     <div v-if="currentResult" class="result-section">
       <div class="result-display">
-        <span class="result-text">{{ resultText() }}</span>
+        <span class="result-text" :class="`result-text--${currentResult}`">{{ resultText() }}</span>
       </div>
       <div class="choices-comparison">
-        <div class="comparison-item">
+        <div class="comparison-item" :class="`comparison-item--${currentResult === 'win' ? 'winner' : currentResult === 'lose' ? 'loser' : ''}`">
           <span class="comparison-label">你</span>
-          <span class="comparison-choice">{{ choiceLabel(playerChoice) }}</span>
+          <span class="comparison-choice" :class="`comparison-choice--reveal`">{{ choiceLabel(playerChoice) }}</span>
         </div>
         <span class="vs-text">VS</span>
-        <div class="comparison-item">
+        <div class="comparison-item" :class="`comparison-item--${currentResult === 'lose' ? 'winner' : currentResult === 'win' ? 'loser' : ''}`">
           <span class="comparison-label">电脑</span>
-          <span class="comparison-choice">{{ choiceLabel(computerChoice) }}</span>
+          <span class="comparison-choice" :class="`comparison-choice--reveal`">{{ choiceLabel(computerChoice) }}</span>
         </div>
       </div>
       <p class="auto-reset-hint">{{ countdownText }}</p>
@@ -230,19 +233,56 @@ function handlePlayAgain(): void {
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.choice-button:active::before {
+  width: 200%;
+  height: 200%;
 }
 
 .choice-button:hover:not(:disabled) {
   background-color: var(--color-gray-100);
   border-color: var(--color-black);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .choice-button--active {
   background-color: var(--color-black);
   border-color: var(--color-black);
   transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.choice-button--shaking {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px) rotate(5deg);
+  }
 }
 
 .choice-button--active .choice-label {
@@ -269,15 +309,17 @@ function handlePlayAgain(): void {
   min-height: 200px;
   background-color: var(--color-gray-100);
   border-radius: var(--radius-lg);
-  animation: fadeIn var(--transition-slow);
+  animation: slideUp 0.4s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes slideUp {
   from {
     opacity: 0;
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -292,6 +334,33 @@ function handlePlayAgain(): void {
   font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--color-black);
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.result-text--win {
+  color: var(--color-green-600);
+}
+
+.result-text--lose {
+  color: var(--color-red-600);
+}
+
+.result-text--draw {
+  color: var(--color-gray-600);
 }
 
 /* 选项对比 */
@@ -307,6 +376,30 @@ function handlePlayAgain(): void {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-2);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.comparison-item--winner {
+  background-color: rgba(34, 197, 94, 0.1);
+  transform: scale(1.05);
+  animation: winnerPulse 0.5s ease-out;
+}
+
+@keyframes winnerPulse {
+  0%, 100% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.comparison-item--loser {
+  background-color: rgba(239, 68, 68, 0.1);
+  transform: scale(0.95);
+  opacity: 0.7;
 }
 
 .comparison-label {
@@ -319,6 +412,24 @@ function handlePlayAgain(): void {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-black);
+}
+
+.comparison-choice--reveal {
+  animation: flipIn 0.4s ease-out;
+}
+
+@keyframes flipIn {
+  0% {
+    opacity: 0;
+    transform: rotateY(90deg) scale(0.5);
+  }
+  50% {
+    transform: rotateY(45deg) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0) scale(1);
+  }
 }
 
 .vs-text {
@@ -337,16 +448,34 @@ function handlePlayAgain(): void {
   font-weight: 600;
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.play-again-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.play-again-button:hover::before {
+  left: 100%;
 }
 
 .play-again-button:hover {
   background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 .play-again-button:active {
   transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 倒计时提示 */

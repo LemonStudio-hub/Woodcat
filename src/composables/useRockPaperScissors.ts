@@ -61,41 +61,48 @@ export function useRockPaperScissors() {
     // 设置玩家选择
     gameStore.setPlayerChoice(playerChoice);
     audioService.play(SoundType.CLICK);
+    vibrationService.vibrate(VibrationType.MOVE);
     
-    // 获取电脑选择（使用 AI 策略）
-    const computerChoice = getComputerChoice();
-    gameStore.setComputerChoice(computerChoice);
-    
-    // 判断结果
-    const result = determineResult(playerChoice, computerChoice);
-    gameStore.setCurrentResult(result);
-    
-    // 播放音效和震动
-    if (result === RPSResult.WIN) {
-      audioService.play(SoundType.WIN);
-      vibrationService.vibrate(VibrationType.WIN);
-    } else if (result === RPSResult.LOSE) {
-      audioService.play(SoundType.LOSE);
-      vibrationService.vibrate(VibrationType.LOSE);
-    } else {
-      audioService.play(SoundType.DRAW);
-      vibrationService.vibrate(VibrationType.DRAW);
-    }
-    
-    // 更新分数
-    gameStore.updateScore(result);
-    
-    // 添加历史记录
-    const history: RPSGameHistory = {
-      playerChoice,
-      computerChoice,
-      result,
-      timestamp: Date.now(),
-    };
-    gameStore.addHistory(history);
-    
-    // 结束游戏
-    gameStore.endGame();
+    // 模拟思考延迟
+    setTimeout(() => {
+      // 获取电脑选择（使用 AI 策略）
+      const computerChoice = getComputerChoice();
+      gameStore.setComputerChoice(computerChoice);
+      
+      // 判断结果
+      const result = determineResult(playerChoice, computerChoice);
+      gameStore.setCurrentResult(result);
+      
+      // 播放音效和震动
+      if (result === RPSResult.WIN) {
+        audioService.play(SoundType.WIN);
+        // 胜利时使用更强的震动模式
+        vibrationService.vibrateCustom([0, 100, 50, 100, 50, 200]);
+      } else if (result === RPSResult.LOSE) {
+        audioService.play(SoundType.LOSE);
+        // 失败时使用连续震动
+        vibrationService.vibrateCustom([0, 100, 50, 100]);
+      } else {
+        audioService.play(SoundType.DRAW);
+        // 平局时使用短震动
+        vibrationService.vibrate(VibrationType.DRAW);
+      }
+      
+      // 更新分数
+      gameStore.updateScore(result);
+      
+      // 添加历史记录
+      const history: RPSGameHistory = {
+        playerChoice,
+        computerChoice,
+        result,
+        timestamp: Date.now(),
+      };
+      gameStore.addHistory(history);
+      
+      // 结束游戏
+      gameStore.endGame();
+    }, 800); // 800ms延迟模拟思考
   }
 
   /**
