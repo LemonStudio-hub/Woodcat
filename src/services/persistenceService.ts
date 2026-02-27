@@ -159,6 +159,34 @@ export interface ChessGameData {
 }
 
 /**
+ * 扫雷游戏统计数据接口
+ */
+export interface MinesweeperStats {
+  gamesPlayed: number;
+  gamesWon: number;
+  gamesLost: number;
+  bestTimes: {
+    easy: number | null;
+    medium: number | null;
+    hard: number | null;
+  };
+}
+
+/**
+ * 扫雷游戏完整数据接口
+ */
+export interface MinesweeperGameData {
+  stats: MinesweeperStats;
+  gameState: {
+    difficulty: string;
+    cells: Array<Array<{ isMine: boolean; adjacentMines: number; state: string }>>;
+    gameState: string;
+    remainingMines: number;
+    gameTime: number;
+  } | null;
+}
+
+/**
  * 持久化服务类
  */
 class PersistenceService {
@@ -456,6 +484,34 @@ class PersistenceService {
       stats: {
         whiteWins: 0,
         blackWins: 0,
+      },
+      gameState: null
+    });
+  }
+
+  // ========== 扫雷游戏 ==========
+
+  /**
+   * 保存扫雷游戏完整数据（包括状态）
+   */
+  saveMinesweeperGame(data: MinesweeperGameData): void {
+    this.save('minesweeper', data);
+  }
+
+  /**
+   * 加载扫雷游戏完整数据（包括状态）
+   */
+  loadMinesweeperGame(): MinesweeperGameData {
+    return this.load('minesweeper', {
+      stats: {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+        bestTimes: {
+          easy: null,
+          medium: null,
+          hard: null,
+        },
       },
       gameState: null
     });

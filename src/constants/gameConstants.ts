@@ -57,6 +57,12 @@ export const GAME_LIST: GameInfo[] = [
     description: '经典国际象棋对战',
     route: '/game/chess',
   },
+  {
+    id: 'minesweeper',
+    name: '扫雷',
+    description: '经典扫雷游戏',
+    route: '/game/minesweeper',
+  },
 ];
 
 /**

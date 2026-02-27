@@ -89,6 +89,14 @@ const routes: RouteRecordRaw[] = [
       title: '国际象棋 - 木头猫',
     },
   },
+  {
+    path: '/game/minesweeper',
+    name: 'Minesweeper',
+    component: () => import('@/views/MinesweeperView.vue'),
+    meta: {
+      title: '扫雷 - 木头猫',
+    },
+  },
 ];
 
 /**
