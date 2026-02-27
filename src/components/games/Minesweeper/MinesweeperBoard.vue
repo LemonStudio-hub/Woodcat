@@ -31,7 +31,7 @@
           :style="{ 
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
-            '--cell-size': `${Math.min(2.5, Math.max(1.5, 40 / cols))}rem`
+            '--cell-size': cellSize
           }"
         >
           <div
@@ -131,6 +131,17 @@ const {
 
 // 初始化时加载数据
 loadStats();
+
+/**
+ * 计算格子大小（基于视口宽度和列数）
+ */
+const cellSize = computed(() => {
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const availableWidth = viewportWidth - 64; // 减去内边距
+  const calculatedSize = availableWidth / cols.value / 16; // 转换为rem
+  const clampedSize = Math.min(2.2, Math.max(1.2, calculatedSize));
+  return `${clampedSize}rem`;
+});
 
 /**
  * 所有格子（平铺数组）
@@ -303,10 +314,8 @@ function handleResetAll(): void {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-width: 1.5rem;
-  min-height: 1.5rem;
-  max-width: 2.5rem;
-  max-height: 2.5rem;
+  min-width: 1.2rem;
+  min-height: 1.2rem;
 }
 
 .cell--hidden {
