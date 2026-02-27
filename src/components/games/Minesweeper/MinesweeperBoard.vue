@@ -133,14 +133,19 @@ const {
 loadStats();
 
 /**
- * 计算格子大小（基于视口宽度和列数）
+ * 棋盘最大宽度（像素）
+ */
+const BOARD_MAX_WIDTH = 600;
+
+/**
+ * 计算格子大小（基于棋盘最大宽度和列数）
  */
 const cellSize = computed(() => {
-  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const availableWidth = viewportWidth - 64; // 减去内边距
-  const calculatedSize = availableWidth / cols.value / 16; // 转换为rem
-  const clampedSize = Math.min(2.2, Math.max(1.2, calculatedSize));
-  return `${clampedSize}rem`;
+  // 格子大小 = 棋盘最大宽度 / 列数
+  // 转换为rem（假设16px = 1rem）
+  const sizeInPx = BOARD_MAX_WIDTH / cols.value;
+  const sizeInRem = sizeInPx / 16;
+  return `${sizeInRem}rem`;
 });
 
 /**
@@ -292,7 +297,8 @@ function handleResetAll(): void {
 .board-container {
   display: flex;
   flex-direction: column;
-  max-width: 100%;
+  max-width: min(90vw, 600px);
+  width: min(90vw, 600px);
 }
 
 .board {
@@ -301,7 +307,7 @@ function handleResetAll(): void {
   background-color: var(--color-gray-400);
   border: var(--border-width-medium) solid var(--color-gray-400);
   user-select: none;
-  max-width: 100%;
+  width: 100%;
 }
 
 .cell {
@@ -314,8 +320,6 @@ function handleResetAll(): void {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-width: 1.2rem;
-  min-height: 1.2rem;
 }
 
 .cell--hidden {
