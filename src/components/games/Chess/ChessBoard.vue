@@ -45,7 +45,7 @@
               <div
                 v-if="isValidMoveTarget({ row: BOARD_SIZE - row, col: col - 1 })"
                 class="valid-move-hint"
-                @click="handleValidMoveClick({ row: BOARD_SIZE - row, col: col - 1 })"
+                @click.stop="handleValidMoveClick({ row: BOARD_SIZE - row, col: col - 1 })"
               />
 
               <!-- 棋子 -->
@@ -57,7 +57,7 @@
                   'piece--black': getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })?.player === Player.BLACK,
                   'piece--selected': selectedPiece?.id === getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })?.id,
                 }"
-                @click="handlePieceClick(getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })!)"
+                @click.stop="handlePieceClick(getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })!)"
               >
                 {{ PIECE_SYMBOLS[getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })!.player][getPieceAt({ row: BOARD_SIZE - row, col: col - 1 })!.type] }}
               </div>
@@ -318,14 +318,14 @@ function handleResetAll(): void {
 .board-container {
   width: 100%;
   max-width: 500px;
+  aspect-ratio: 1 / 1;
 }
 
 .board {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-white);
-  border: var(--border-width-medium) solid var(--color-black);
-  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
