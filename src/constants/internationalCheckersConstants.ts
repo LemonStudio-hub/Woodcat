@@ -107,13 +107,12 @@ export interface ValidMove {
  * 方向向量
  * 注意：row-1是向上，row+1是向下
  * col-1是向左，col+1是向右
- * 修复用户操作失灵问题：交换左右方向以匹配用户期望
  */
 export const DIRECTIONS = {
-  UP_LEFT: { row: -1, col: 1 },    // 向上向左（修复后）
-  UP_RIGHT: { row: -1, col: -1 },  // 向上向右（修复后）
-  DOWN_LEFT: { row: 1, col: 1 },   // 向下向左（修复后）
-  DOWN_RIGHT: { row: 1, col: -1 }, // 向下向右（修复后）
+  UP_LEFT: { row: -1, col: -1 },   // 向上向左
+  UP_RIGHT: { row: -1, col: 1 },   // 向上向右
+  DOWN_LEFT: { row: 1, col: -1 },  // 向下向左
+  DOWN_RIGHT: { row: 1, col: 1 },  // 向下向右
 } as const;
 
 /**
