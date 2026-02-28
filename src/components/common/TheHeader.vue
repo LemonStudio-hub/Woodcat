@@ -22,7 +22,7 @@
               </div>
             </template>
             <template v-else>
-              <router-link to="/profile" class="nav-link nav-link--auth nav-link--primary">个人</router-link>
+              <router-link to="/login" class="nav-link nav-link--auth nav-link--primary">个人</router-link>
             </template>
           </div>
         </nav>
