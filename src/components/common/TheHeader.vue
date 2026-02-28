@@ -7,7 +7,7 @@
           <span class="logo-text">木头猫</span>
         </router-link>
         <nav class="nav">
-          <router-link to="/" class="nav-link" exact>首页</router-link>
+          <router-link to="/" class="nav-link">首页</router-link>
           <a href="/game/random" class="nav-link" @click.prevent="openRandomGame()">游戏</a>
           <router-link to="/settings" class="nav-link">设置</router-link>
           <div class="user-section">
@@ -190,10 +190,6 @@ document.addEventListener('click', (e) => {
   font-weight: 600;
 }
 
-.nav-link.router-link-active::after {
-  display: none;
-}
-
 .nav-link--auth {
   padding: var(--spacing-2) var(--spacing-4);
 }
@@ -205,6 +201,15 @@ document.addEventListener('click', (e) => {
 
 .nav-link--primary:hover {
   background-color: var(--color-gray-800);
+}
+
+.nav-link--primary.router-link-active {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.nav-link--primary.router-link-active:hover {
+  background-color: var(--color-black);
 }
 
 /* 用户区域 */
