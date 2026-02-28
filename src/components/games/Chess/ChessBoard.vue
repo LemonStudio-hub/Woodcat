@@ -215,7 +215,11 @@ function handleValidMoveClick(coord: { row: number; col: number }): void {
  * 处理棋子点击
  */
 function handlePieceClick(piece: any): void {
+  // 只在游戏进行中或将军状态下允许选择棋子
   if (gameState.value !== GameState.PLAYING && gameState.value !== GameState.CHECKMATE) return;
+
+  // 检查是否是当前玩家的棋子
+  if (piece.player !== currentPlayer.value) return;
 
   if (selectedPiece.value?.id === piece.id) {
     deselectPiece();

@@ -688,6 +688,7 @@ export function useInternationalCheckersGame() {
     selectedPiece,
     validMoves,
     isChainJumping,
+    chainJumpPiece,
     redWins,
     blackWins,
     statusText,

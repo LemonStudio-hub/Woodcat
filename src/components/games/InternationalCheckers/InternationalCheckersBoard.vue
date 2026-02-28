@@ -120,6 +120,7 @@ const {
   selectedPiece,
   validMoves,
   isChainJumping,
+  chainJumpPiece,
   selectPiece,
   deselectPiece,
   movePiece,
@@ -170,6 +171,12 @@ function handleValidMoveClick(coord: { row: number; col: number }): void {
  */
 function handlePieceClick(piece: any): void {
   if (gameState.value !== GameState.PLAYING) return;
+
+  // 如果正在进行连续跳跃，只能选择正在跳跃的棋子
+  if (isChainJumping.value && chainJumpPiece.value?.id !== piece.id) {
+    // 给用户提示：必须继续跳跃
+    return;
+  }
 
   if (selectedPiece.value?.id === piece.id) {
     deselectPiece();
