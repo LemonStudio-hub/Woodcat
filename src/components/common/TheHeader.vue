@@ -10,6 +10,22 @@
           <router-link to="/" class="nav-link" exact>首页</router-link>
           <a href="/game/random" class="nav-link" @click.prevent="openRandomGame()">游戏</a>
           <router-link to="/settings" class="nav-link">设置</router-link>
+          <div class="user-section">
+            <template v-if="user">
+              <div class="user-info" @click="toggleUserMenu">
+                <span class="user-avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+                <span class="user-name">{{ user.username }}</span>
+              </div>
+              <div v-if="showUserMenu" class="user-menu">
+                <router-link to="/profile" class="user-menu-item">个人资料</router-link>
+                <button class="user-menu-item user-menu-item--danger" @click="handleLogout">退出登录</button>
+              </div>
+            </template>
+            <template v-else>
+              <router-link to="/login" class="nav-link nav-link--auth">登录</router-link>
+              <router-link to="/register" class="nav-link nav-link--auth nav-link--primary">注册</router-link>
+            </template>
+          </div>
         </nav>
       </div>
     </div>
@@ -22,7 +38,24 @@
  * 显示网站 Logo 和导航菜单
  */
 
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 import { GAME_LIST } from '@/constants/gameConstants';
+
+const router = useRouter();
+const userStore = useUserStore();
+
+const user = ref(userStore.user);
+const showUserMenu = ref(false);
+
+onMounted(() => {
+  user.value = userStore.user;
+});
+
+onUnmounted(() => {
+  // 清理监听器
+});
 
 /**
  * 随机选择一个游戏
@@ -59,6 +92,29 @@ function openRandomGame(): void {
     window.location.href = route;
   }
 }
+
+/**
+ * 切换用户菜单
+ */
+function toggleUserMenu() {
+  showUserMenu.value = !showUserMenu.value;
+}
+
+/**
+ * 退出登录
+ */
+async function handleLogout() {
+  await userStore.logout();
+  showUserMenu.value = false;
+  router.push('/');
+}
+
+// 点击外部关闭用户菜单
+document.addEventListener('click', (e) => {
+  if (showUserMenu.value && !(e.target as HTMLElement).closest('.user-section')) {
+    showUserMenu.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -109,6 +165,7 @@ function openRandomGame(): void {
 .nav {
   display: flex;
   gap: var(--spacing-4);
+  align-items: center;
 }
 
 .nav-link {
@@ -120,6 +177,7 @@ function openRandomGame(): void {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .nav-link:hover {
@@ -135,6 +193,102 @@ function openRandomGame(): void {
 
 .nav-link.router-link-active::after {
   display: none;
+}
+
+.nav-link--auth {
+  padding: var(--spacing-2) var(--spacing-4);
+}
+
+.nav-link--primary {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.nav-link--primary:hover {
+  background-color: var(--color-gray-800);
+}
+
+/* 用户区域 */
+.user-section {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.user-info:hover {
+  background-color: var(--color-gray-100);
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-radius: 50%;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.user-name {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+/* 用户菜单 */
+.user-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
+  min-width: 160px;
+  background-color: var(--color-white);
+  border: var(--border-width-thin) solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-2);
+  z-index: 10;
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-gray-700);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  text-decoration: none;
+}
+
+.user-menu-item:hover {
+  background-color: var(--color-gray-100);
+}
+
+.user-menu-item--danger {
+  color: var(--color-red-600);
+}
+
+.user-menu-item--danger:hover {
+  background-color: var(--color-red-50);
 }
 
 /* 响应式设计 */
@@ -158,6 +312,14 @@ function openRandomGame(): void {
   .nav-link {
     font-size: var(--font-size-xs);
     padding: var(--spacing-1) var(--spacing-2);
+  }
+
+  .nav-link--auth {
+    padding: var(--spacing-1) var(--spacing-3);
+  }
+
+  .user-name {
+    display: none;
   }
 }
 </style>

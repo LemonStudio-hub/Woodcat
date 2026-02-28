@@ -4,6 +4,7 @@
  */
 
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
 
 /**
  * 路由配置
@@ -15,6 +16,31 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/HomeView.vue'),
     meta: {
       title: '首页 - 木头猫',
+    },
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: {
+      title: '登录 - 木头猫',
+    },
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: {
+      title: '注册 - 木头猫',
+    },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: {
+      title: '个人资料 - 木头猫',
+      requiresAuth: true,
     },
   },
   {
@@ -109,12 +135,33 @@ const router = createRouter({
 
 /**
  * 路由前置守卫
- * 设置页面标题
+ * 设置页面标题并检查认证
  */
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   if (to.meta.title) {
     document.title = to.meta.title as string;
   }
+
+  // 检查是否需要认证
+  if (to.meta.requiresAuth) {
+    const userStore = useUserStore();
+    await userStore.verifyToken();
+    
+    if (!userStore.user) {
+      next('/login');
+      return;
+    }
+  }
+
+  // 如果已登录，访问登录/注册页面时重定向到首页
+  if ((to.path === '/login' || to.path === '/register')) {
+    const userStore = useUserStore();
+    if (userStore.user) {
+      next('/');
+      return;
+    }
+  }
+
   next();
 });
 
