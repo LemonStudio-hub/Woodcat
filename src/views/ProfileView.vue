@@ -225,9 +225,12 @@ watch(() => userStore.user, (newUser) => {
 
 // 监听标签切换，重新渲染 Turnstile
 watch(activeTab, (newTab) => {
-  // 等待 DOM 更新后重新渲染
+  // 等待 DOM 更新后再渲染 Turnstile
   nextTick(() => {
-    renderTurnstile(newTab);
+    // 额外延迟以确保容器已准备好
+    setTimeout(() => {
+      renderTurnstile(newTab);
+    }, 100);
   });
 });
 
@@ -342,44 +345,70 @@ function loadTurnstile() {
 
 function renderTurnstile(tab: 'login' | 'register') {
   if (!(window as any).turnstile) {
+    console.error('Turnstile is not loaded');
     return;
   }
 
-  // 清除旧的 token
-  if (tab === 'login') {
-    registerTurnstileToken.value = '';
-  } else {
-    loginTurnstileToken.value = '';
-  }
+  // 清除两个 token，因为切换标签时需要重新验证
+  loginTurnstileToken.value = '';
+  registerTurnstileToken.value = '';
 
   // 移除现有的 Turnstile widget
   if (loginTurnstileContainer.value) {
-    (window as any).turnstile.remove(loginTurnstileContainer.value);
+    try {
+      (window as any).turnstile.remove(loginTurnstileContainer.value);
+    } catch (e) {
+      console.error('Error removing login Turnstile:', e);
+    }
   }
   if (registerTurnstileContainer.value) {
-    (window as any).turnstile.remove(registerTurnstileContainer.value);
+    try {
+      (window as any).turnstile.remove(registerTurnstileContainer.value);
+    } catch (e) {
+      console.error('Error removing register Turnstile:', e);
+    }
   }
 
   // 渲染当前标签的 Turnstile
   if (tab === 'login' && loginTurnstileContainer.value) {
-    (window as any).turnstile.render(loginTurnstileContainer.value, {
-      sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-      callback: (token: string) => {
-        loginTurnstileToken.value = token;
-      },
-      'error-callback': () => {
-        loginTurnstileToken.value = '';
-      },
-    });
+    console.log('Rendering login Turnstile');
+    try {
+      (window as any).turnstile.render(loginTurnstileContainer.value, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: (token: string) => {
+          console.log('Login Turnstile token received:', token ? 'YES' : 'NO');
+          loginTurnstileToken.value = token;
+        },
+        'error-callback': (error: any) => {
+          console.error('Login Turnstile error:', error);
+          loginTurnstileToken.value = '';
+        },
+      });
+    } catch (e) {
+      console.error('Error rendering login Turnstile:', e);
+    }
   } else if (tab === 'register' && registerTurnstileContainer.value) {
-    (window as any).turnstile.render(registerTurnstileContainer.value, {
-      sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-      callback: (token: string) => {
-        registerTurnstileToken.value = token;
-      },
-      'error-callback': () => {
-        registerTurnstileToken.value = '';
-      },
+    console.log('Rendering register Turnstile');
+    try {
+      (window as any).turnstile.render(registerTurnstileContainer.value, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: (token: string) => {
+          console.log('Register Turnstile token received:', token ? 'YES' : 'NO');
+          registerTurnstileToken.value = token;
+        },
+        'error-callback': (error: any) => {
+          console.error('Register Turnstile error:', error);
+          registerTurnstileToken.value = '';
+        },
+      });
+    } catch (e) {
+      console.error('Error rendering register Turnstile:', e);
+    }
+  } else {
+    console.error('Cannot render Turnstile:', {
+      tab,
+      loginContainer: !!loginTurnstileContainer.value,
+      registerContainer: !!registerTurnstileContainer.value,
     });
   }
 }
