@@ -21,7 +21,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 中间件
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://your-domain.com'],
+  origin: ['http://localhost:5173', 'https://woodcat.lemonhub.workers.dev'],
   credentials: true,
 }));
 app.use('*', logger());
@@ -34,8 +34,26 @@ app.get('/api/health', (c) => {
 // 认证路由（不需要 JWT）
 app.route('/api/auth', authRoutes);
 
-// 用户路由（需要 JWT）
-app.use('/api/user/*', jwt({ secret: 'JWT_SECRET' as any, alg: 'HS256' }));
+// 用户路由（需要 JWT 验证）
+app.use('/api/user/*', async (c, next) => {
+  const token = c.req.header('Authorization')?.replace('Bearer ', '');
+  
+  if (!token) {
+    return c.json({ error: '未授权' }, 401);
+  }
+
+  try {
+    const { verifyToken } = await import('./utils/crypto');
+    const payload = await verifyToken(token, c.env.JWT_SECRET);
+    
+    // 将 payload 存储到上下文中
+    c.set('jwtPayload', payload);
+    
+    await next();
+  } catch (error) {
+    return c.json({ error: '无效的 token' }, 401);
+  }
+});
 app.route('/api/user', userRoutes);
 
 // 获取客户端 IP 和 User-Agent

@@ -258,6 +258,9 @@ async function handleLogin() {
 
   if (result.success) {
     error.value = '';
+    isLoading.value = false;
+    // 登录成功后跳转到首页
+    router.push('/');
   } else {
     error.value = result.error || '登录失败';
     isLoading.value = false;
@@ -284,6 +287,9 @@ async function handleRegister() {
 
   if (result.success) {
     error.value = '';
+    isLoading.value = false;
+    // 注册成功后跳转到首页
+    router.push('/');
   } else {
     error.value = result.error || '注册失败';
     isLoading.value = false;
