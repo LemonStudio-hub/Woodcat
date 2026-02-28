@@ -2,24 +2,116 @@
  * 加密工具函数
  */
 
+const PBKDF2_ITERATIONS = 100000;
+const SALT_LENGTH = 16;
+
 /**
- * 使用 Web Crypto API 哈希密码
+ * 生成随机盐值
+ */
+async function generateSalt(): Promise<string> {
+  const saltBuffer = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  return Array.from(saltBuffer).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * 使用 PBKDF2 哈希密码（加盐）
  */
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const passwordData = encoder.encode(password);
+  
+  // 生成随机盐值
+  const salt = await generateSalt();
+  const saltData = encoder.encode(salt);
+  
+  // 使用 PBKDF2 派生密钥
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    passwordData,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: saltData,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    256
+  );
+  
+  const hashArray = Array.from(new Uint8Array(derivedBits));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  
+  // 返回盐值 + 哈希值，格式为：salt:hash
+  return `${salt}:${hashHex}`;
 }
 
 /**
  * 验证密码
  */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  try {
+    const [salt, hash] = storedHash.split(':');
+    
+    if (!salt || !hash) {
+      console.error('Invalid stored hash format');
+      return false;
+    }
+    
+    const encoder = new TextEncoder();
+    const passwordData = encoder.encode(password);
+    const saltData = encoder.encode(salt);
+    
+    // 使用相同的盐值重新计算哈希
+    const baseKey = await crypto.subtle.importKey(
+      'raw',
+      passwordData,
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: saltData,
+        iterations: PBKDF2_ITERATIONS,
+        hash: 'SHA-256',
+      },
+      baseKey,
+      256
+    );
+    
+    const hashArray = Array.from(new Uint8Array(derivedBits));
+    const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // 使用恒定时间比较，防止时序攻击
+    return constantTimeCompare(computedHash, hash);
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
+}
+
+/**
+ * 恒定时间比较（防止时序攻击）
+ */
+function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  
+  return result === 0;
 }
 
 /**

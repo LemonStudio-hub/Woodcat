@@ -2,11 +2,13 @@
   <div class="app">
     <TheHeader />
     <main class="main">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <ErrorBoundary>
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </ErrorBoundary>
     </main>
     <TheFooter />
   </div>
@@ -20,6 +22,16 @@
 
 import TheHeader from '@/components/common/TheHeader.vue';
 import TheFooter from '@/components/common/TheFooter.vue';
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue';
+
+// 全局错误处理
+window.addEventListener('error', (event) => {
+  console.error('Global error:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
 </script>
 
 <style scoped>

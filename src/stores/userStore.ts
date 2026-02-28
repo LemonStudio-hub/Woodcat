@@ -5,6 +5,7 @@
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { apiService } from '@/services/apiService';
 
 export interface User {
   id: number;
@@ -19,8 +20,6 @@ export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-
-  const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8787';
 
   /**
    * 从 localStorage 加载用户信息
@@ -49,6 +48,17 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
+   * 获取带认证的 headers
+   */
+  function getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (token.value) {
+      headers['Authorization'] = `Bearer ${token.value}`;
+    }
+    return headers;
+  }
+
+  /**
    * 注册
    */
   async function register(email: string, username: string, password: string, turnstileToken: string) {
@@ -56,19 +66,12 @@ export const useUserStore = defineStore('user', () => {
     error.value = null;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, username, password, turnstileToken }),
+      const data: any = await apiService.post('/api/auth/register', {
+        email,
+        username,
+        password,
+        turnstileToken,
       });
-
-      const data: any = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '注册失败');
-      }
 
       user.value = data.user;
       token.value = data.token;
@@ -91,19 +94,11 @@ export const useUserStore = defineStore('user', () => {
     error.value = null;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, turnstileToken }),
+      const data: any = await apiService.post('/api/auth/login', {
+        email,
+        password,
+        turnstileToken,
       });
-
-      const data: any = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '登录失败');
-      }
 
       user.value = data.user;
       token.value = data.token;
@@ -124,18 +119,14 @@ export const useUserStore = defineStore('user', () => {
   async function logout() {
     try {
       if (token.value) {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token.value}`,
-          },
-        });
+        await apiService.post('/api/auth/logout', {}, getAuthHeaders());
       }
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
       user.value = null;
       token.value = null;
+      apiService.clearCSRFToken();
       saveUserToStorage();
     }
   }
@@ -148,20 +139,11 @@ export const useUserStore = defineStore('user', () => {
     error.value = null;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`,
-        },
-        body: JSON.stringify({ username, bio, avatarUrl }),
-      });
-
-      const data: any = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '更新失败');
-      }
+      const data: any = await apiService.put('/api/user/profile', {
+        username,
+        bio,
+        avatarUrl,
+      }, getAuthHeaders());
 
       user.value = data.user;
       saveUserToStorage();
@@ -184,16 +166,9 @@ export const useUserStore = defineStore('user', () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-        },
-      });
+      const data: any = await apiService.get('/api/auth/verify', getAuthHeaders());
 
-      const data: any = await response.json();
-
-      if (!response.ok || !data.valid) {
+      if (!data.valid) {
         logout();
         return { valid: false };
       }

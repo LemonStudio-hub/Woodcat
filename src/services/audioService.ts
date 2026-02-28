@@ -236,16 +236,41 @@ class AudioService {
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private enabled: boolean = true;
+  private errorCount: number = 0;
+  private maxErrors: number = 3;
+  private cleanupTimer: number | null = null;
 
   /**
    * 初始化音频上下文
    */
   private initContext(): void {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      this.masterGain = this.audioContext.createGain();
-      this.masterGain.connect(this.audioContext.destination);
-      this.masterGain.gain.value = 0.5; // 主音量
+      try {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        this.masterGain = this.audioContext.createGain();
+        this.masterGain.connect(this.audioContext.destination);
+        this.masterGain.gain.value = 0.5; // 主音量
+        this.errorCount = 0; // 重置错误计数
+      } catch (error) {
+        console.error('Failed to initialize AudioContext:', error);
+        this.enabled = false;
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * 清理音频上下文
+   */
+  private cleanupContext(): void {
+    if (this.audioContext) {
+      try {
+        this.audioContext.close();
+      } catch (error) {
+        console.error('Failed to close AudioContext:', error);
+      }
+      this.audioContext = null;
+      this.masterGain = null;
     }
   }
 
@@ -295,15 +320,46 @@ class AudioService {
       // 播放
       oscillator.start(now);
       oscillator.stop(now + config.duration);
+
+      // 重置错误计数
+      this.errorCount = 0;
     } catch (error) {
       console.error('Failed to play sound:', error);
-      
-      // 禁用音效以避免持续报错
-      this.enabled = false;
-      
-      // 通知用户（如果有通知系统）
-      console.warn('音效播放失败，已自动关闭音效。请刷新页面或检查浏览器兼容性。');
+      this.errorCount++;
+
+      // 如果错误次数超过阈值，禁用音效
+      if (this.errorCount >= this.maxErrors) {
+        this.enabled = false;
+        console.warn('音效播放失败次数过多，已自动关闭音效。请刷新页面重试。');
+      }
     }
+  }
+
+  /**
+   * 重试启用音效
+   */
+  retryEnable(): void {
+    this.errorCount = 0;
+    this.enabled = true;
+    try {
+      this.cleanupContext();
+      this.initContext();
+      console.log('音效服务已重置');
+    } catch (error) {
+      console.error('重试启用音效失败:', error);
+    }
+  }
+
+  /**
+   * 清理资源
+   */
+  dispose(): void {
+    if (this.cleanupTimer) {
+      clearTimeout(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    this.cleanupContext();
+    this.enabled = false;
   }
 
   /**

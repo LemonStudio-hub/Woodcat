@@ -70,6 +70,9 @@ const {
 // 自动重置定时器
 let autoResetTimer: number | null = null;
 
+// BroadcastChannel
+let channel: BroadcastChannel | null = null;
+
 /**
  * 处理游戏回合
  */
@@ -138,28 +141,38 @@ onUnmounted(() => {
   if (autoResetTimer !== null) {
     clearTimeout(autoResetTimer);
   }
+  
+  // 清理 BroadcastChannel
+  if (channel !== null) {
+    channel.close();
+    channel = null;
+  }
 });
 
 /**
  * 组件挂载时监听 BroadcastChannel
  */
 onMounted(() => {
-  const channel = new BroadcastChannel('woodcat-games');
-  
-  channel.onmessage = (event) => {
-    const message = event.data;
+  try {
+    channel = new BroadcastChannel('woodcat-games');
     
-    // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
-    if (message.type === 'close-game' && message.gameRoute !== '/game/rock-paper-scissors') {
-      channel.close();
-      window.close();
+    if (channel) {
+      channel.onmessage = (event) => {
+        const message = event.data;
+        
+        // 如果收到关闭消息，且不是当前游戏，则关闭当前标签页
+        if (message.type === 'close-game' && message.gameRoute !== '/game/rock-paper-scissors') {
+          if (channel) {
+            channel.close();
+          }
+          window.close();
+        }
+      };
     }
-  };
-  
-  // 在组件卸载时清理
-  onUnmounted(() => {
-    channel.close();
-  });
+  } catch (error) {
+    console.error('Failed to create BroadcastChannel:', error);
+    channel = null;
+  }
 });
 </script>
 
