@@ -21,7 +21,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 中间件
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://woodcat.lemonhub.workers.dev'],
+  origin: ['http://localhost:5173', 'https://woodcat.pages.dev'],
   credentials: true,
 }));
 app.use('*', logger());
