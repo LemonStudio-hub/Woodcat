@@ -163,23 +163,38 @@ export function useLightBallGame() {
     const h = screenHeight.value;
     const speed = ENEMY_BALL_CONFIG.SPEED;
 
-    // 根据方向生成位置和速度，直线前进到相对边界
+    // 根据方向生成位置和速度，添加随机角度偏移
+    // 随机角度偏移范围：±45度
+    const angleOffset = (Math.random() - 0.5) * Math.PI / 2;
+
     switch (direction) {
       case Direction.UP:
         position = { x: Math.random() * (w - 2 * r) + r, y: h - r };
-        velocity = { x: 0, y: -speed };
+        velocity = {
+          x: Math.sin(angleOffset) * speed,
+          y: -Math.cos(angleOffset) * speed
+        };
         break;
       case Direction.DOWN:
         position = { x: Math.random() * (w - 2 * r) + r, y: r };
-        velocity = { x: 0, y: speed };
+        velocity = {
+          x: Math.sin(angleOffset) * speed,
+          y: Math.cos(angleOffset) * speed
+        };
         break;
       case Direction.LEFT:
         position = { x: w - r, y: Math.random() * (h - 2 * r) + r };
-        velocity = { x: -speed, y: 0 };
+        velocity = {
+          x: -Math.cos(angleOffset) * speed,
+          y: Math.sin(angleOffset) * speed
+        };
         break;
       case Direction.RIGHT:
         position = { x: r, y: Math.random() * (h - 2 * r) + r };
-        velocity = { x: speed, y: 0 };
+        velocity = {
+          x: Math.cos(angleOffset) * speed,
+          y: Math.sin(angleOffset) * speed
+        };
         break;
     }
 
