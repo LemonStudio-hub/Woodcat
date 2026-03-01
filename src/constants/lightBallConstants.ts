@@ -25,15 +25,15 @@ export const GAME_CONFIG = {
  * 粒子配置
  */
 export const PARTICLE_CONFIG = {
-  COUNT: 15,           // 碰撞粒子数量
-  TRAIL_COUNT: 2,      // 尾迹粒子数量
-  LIFETIME: 1000,      // 粒子存活时间（毫秒）
-  TRAIL_LIFETIME: 500, // 尾迹粒子存活时间（毫秒）
-  MIN_SIZE: 2,         // 最小粒子大小
-  MAX_SIZE: 6,         // 最大粒子大小
-  MIN_SPEED: 2,        // 最小速度
-  MAX_SPEED: 6,        // 最大速度
-  FRICTION: 0.97,      // 摩擦力
+  COUNT: 25,           // 碰撞粒子数量
+  TRAIL_COUNT: 4,      // 尾迹粒子数量
+  LIFETIME: 1500,      // 粒子存活时间（毫秒）
+  TRAIL_LIFETIME: 800, // 尾迹粒子存活时间（毫秒）
+  MIN_SIZE: 3,         // 最小粒子大小
+  MAX_SIZE: 10,        // 最大粒子大小
+  MIN_SPEED: 3,        // 最小速度
+  MAX_SPEED: 10,       // 最大速度
+  FRICTION: 0.96,      // 摩擦力
 } as const;
 
 /**
@@ -117,6 +117,11 @@ export interface Particle {
   color: string;
   birthTime: number;
   lifetime: number;
+  type?: 'explosion' | 'spark' | 'trail' | 'star';
+  rotation?: number;
+  rotationSpeed?: number;
+  glow?: number;
+  pulse?: boolean;
 }
 
 /**

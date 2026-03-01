@@ -238,10 +238,10 @@ const canvasStyle = computed(() => {
  * 球样式
  */
 const getBallStyle = computed(() => {
-  const pulseScale = 1 + Math.sin(animationState.value.pulse) * 0.08;
-  const glowSize = BALL_CONFIG.GLOW_SIZE * (0.8 + animationState.value.glowIntensity * 0.4);
+  const pulseScale = 1 + Math.sin(animationState.value.pulse) * 0.1;
+  const glowSize = BALL_CONFIG.GLOW_SIZE * (0.8 + animationState.value.glowIntensity * 0.6);
   const isMoving = ballVelocity.value.x !== 0 || ballVelocity.value.y !== 0;
-  
+
   return {
     left: `${ball.value.position.x}px`,
     top: `${ball.value.position.y}px`,
@@ -250,8 +250,10 @@ const getBallStyle = computed(() => {
     backgroundColor: BALL_CONFIG.COLOR,
     boxShadow: `
       0 0 ${glowSize}px ${BALL_CONFIG.GLOW_COLOR},
-      0 0 ${glowSize * 0.5}px rgba(255, 255, 255, 0.4),
-      inset 0 0 ${BALL_CONFIG.RADIUS}px rgba(255, 255, 255, 0.2)
+      0 0 ${glowSize * 0.6}px rgba(255, 255, 255, 0.5),
+      0 0 ${glowSize * 0.3}px rgba(255, 255, 255, 0.7),
+      0 0 ${glowSize * 0.15}px rgba(255, 255, 255, 0.9),
+      inset 0 0 ${BALL_CONFIG.RADIUS}px rgba(255, 255, 255, 0.3)
     `,
     transform: `translate(-50%, -50%) translateZ(0) scale(${pulseScale})`,
     transition: isMoving ? 'none' : 'transform 0.3s ease-out',
@@ -265,6 +267,7 @@ function getEnemyBallStyle(enemy: any) {
   const now = Date.now();
   let scale = 1;
   let opacity = 1;
+  let glowSize = enemy.radius * 3;
 
   if (enemy.isExploding) {
     const elapsed = now - (enemy.explosionStartTime || 0);
@@ -274,7 +277,13 @@ function getEnemyBallStyle(enemy: any) {
       // 爆炸动画：先放大后消失
       scale = 1 + progress * 3; // 放大到4倍
       opacity = 1 - progress; // 渐变透明
+      glowSize = enemy.radius * 3 * (1 + progress * 2); // 爆炸时发光增强
     }
+  } else {
+    // 正常状态下添加脉动效果
+    const pulse = Math.sin(now * 0.005) * 0.1;
+    scale = 1 + pulse;
+    glowSize = enemy.radius * 3 * (1 + pulse * 0.5);
   }
 
   return {
@@ -284,8 +293,9 @@ function getEnemyBallStyle(enemy: any) {
     height: `${enemy.radius * 2}px`,
     backgroundColor: enemy.color,
     boxShadow: `
-      0 0 ${enemy.radius * 3}px ${enemy.color},
-      0 0 ${enemy.radius * 1.5}px rgba(255, 255, 255, 0.3),
+      0 0 ${glowSize}px ${enemy.color},
+      0 0 ${glowSize * 0.5}px rgba(255, 255, 255, 0.4),
+      0 0 ${glowSize * 0.25}px rgba(255, 255, 255, 0.6),
       inset 0 0 ${enemy.radius * 0.5}px rgba(255, 255, 255, 0.3)
     `,
     transform: `translateZ(0) scale(${scale})`,
@@ -300,8 +310,35 @@ function getParticleStyle(particle: any) {
   const now = Date.now();
   const age = now - particle.birthTime;
   const progress = age / particle.lifetime;
-  const opacity = 1 - progress;
-  const scale = 1 - progress * 0.6;
+  let opacity = 1 - progress;
+  let scale = 1 - progress * 0.6;
+
+  // 根据粒子类型应用不同的效果
+  let rotation = particle.rotation || 0;
+  let glowSize = particle.size * 2;
+
+  if (particle.type === 'spark') {
+    // 闪烁粒子：快速闪烁
+    opacity *= 0.5 + Math.sin(age * 0.03) * 0.5;
+    glowSize = particle.size * 3;
+  } else if (particle.type === 'star') {
+    // 星星粒子：发光更强烈
+    glowSize = particle.size * 4 * (particle.glow || 1);
+  } else if (particle.type === 'explosion') {
+    // 爆炸粒子：逐渐变小
+    scale = 1 - progress * 0.8;
+    glowSize = particle.size * 2.5;
+  } else if (particle.type === 'trail') {
+    // 尾迹粒子：柔和发光
+    glowSize = particle.size * 1.5;
+  }
+
+  // 脉冲效果
+  let pulseScale = 1;
+  if (particle.pulse) {
+    pulseScale = 1 + Math.sin(age * 0.01) * 0.3;
+    scale *= pulseScale;
+  }
 
   return {
     left: `${particle.position.x - particle.size / 2}px`,
@@ -310,8 +347,11 @@ function getParticleStyle(particle: any) {
     height: `${particle.size}px`,
     backgroundColor: particle.color,
     opacity: opacity,
-    transform: `scale(${scale})`,
-    boxShadow: `0 0 ${particle.size * 2}px ${particle.color}`,
+    transform: `translateZ(0) scale(${scale}) rotate(${rotation}rad)`,
+    boxShadow: `
+      0 0 ${glowSize}px ${particle.color},
+      0 0 ${glowSize * 0.5}px rgba(255, 255, 255, 0.3)
+    `,
   };
 }
 
@@ -581,13 +621,47 @@ onUnmounted(() => {
 /* 游戏画布 */
 .game-canvas {
   position: relative;
-  background: #000000;
+  background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
   border-radius: var(--radius-lg);
   overflow: hidden;
   flex: 1;
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
+}
+
+.game-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 10%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.2) 1px, transparent 0),
+    radial-gradient(1px 1px at 30% 50%, rgba(255, 255, 255, 0.4) 1px, transparent 0),
+    radial-gradient(1px 1px at 40% 70%, rgba(255, 255, 255, 0.2) 1px, transparent 0),
+    radial-gradient(1px 1px at 50% 20%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(1px 1px at 60% 80%, rgba(255, 255, 255, 0.2) 1px, transparent 0),
+    radial-gradient(1px 1px at 70% 40%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(1px 1px at 80% 60%, rgba(255, 255, 255, 0.2) 1px, transparent 0),
+    radial-gradient(1px 1px at 90% 90%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(2px 2px at 15% 45%, rgba(255, 255, 255, 0.4) 1px, transparent 0),
+    radial-gradient(2px 2px at 35% 25%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(2px 2px at 55% 65%, rgba(255, 255, 255, 0.2) 1px, transparent 0),
+    radial-gradient(2px 2px at 75% 85%, rgba(255, 255, 255, 0.3) 1px, transparent 0),
+    radial-gradient(2px 2px at 95% 15%, rgba(255, 255, 255, 0.4) 1px, transparent 0);
+  background-size: 200% 200%;
+  animation: starMove 60s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes starMove {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
 }
 
 /* 球 */

@@ -110,6 +110,7 @@ export function useLightBallGame() {
 
   // ========== 创建碰撞粒子 ==========
   function createCollisionParticles(position: Position, color: string): void {
+    // 爆炸粒子 - 从中心向外爆炸
     for (let i = 0; i < PARTICLE_CONFIG.COUNT; i++) {
       const angle = (Math.PI * 2 * i) / PARTICLE_CONFIG.COUNT + Math.random() * 0.3;
       const speed = PARTICLE_CONFIG.MIN_SPEED + Math.random() * (PARTICLE_CONFIG.MAX_SPEED - PARTICLE_CONFIG.MIN_SPEED);
@@ -126,6 +127,55 @@ export function useLightBallGame() {
         color,
         birthTime: Date.now(),
         lifetime: PARTICLE_CONFIG.LIFETIME,
+        type: 'explosion',
+        glow: 1,
+      });
+    }
+
+    // 闪烁粒子 - 快速闪烁
+    for (let i = 0; i < 8; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = PARTICLE_CONFIG.MIN_SPEED * 2 + Math.random() * 5;
+      const size = PARTICLE_CONFIG.MIN_SIZE + Math.random() * 3;
+
+      particles.value.push({
+        id: particleIdCounter++,
+        position: { x: position.x, y: position.y },
+        velocity: {
+          x: Math.cos(angle) * speed,
+          y: Math.sin(angle) * speed,
+        },
+        size,
+        color: `rgba(255, 255, 255, ${0.8 + Math.random() * 0.2})`,
+        birthTime: Date.now(),
+        lifetime: 600,
+        type: 'spark',
+        glow: 2,
+        pulse: true,
+      });
+    }
+
+    // 星星粒子 - 旋转发光
+    for (let i = 0; i < 5; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = PARTICLE_CONFIG.MIN_SPEED + Math.random() * 3;
+      const size = 4 + Math.random() * 4;
+
+      particles.value.push({
+        id: particleIdCounter++,
+        position: { x: position.x, y: position.y },
+        velocity: {
+          x: Math.cos(angle) * speed,
+          y: Math.sin(angle) * speed,
+        },
+        size,
+        color: `rgba(255, 255, 200, ${0.9 + Math.random() * 0.1})`,
+        birthTime: Date.now(),
+        lifetime: 1200,
+        type: 'star',
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.3,
+        glow: 1.5,
       });
     }
   }
@@ -135,11 +185,11 @@ export function useLightBallGame() {
     for (let i = 0; i < PARTICLE_CONFIG.TRAIL_COUNT; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 2;
-      const size = PARTICLE_CONFIG.MIN_SIZE + Math.random() * 2;
+      const size = PARTICLE_CONFIG.MIN_SIZE + Math.random() * 3;
 
       particles.value.push({
         id: particleIdCounter++,
-        position: { 
+        position: {
           x: position.x - velocity.x * 0.5 + (Math.random() - 0.5) * 10,
           y: position.y - velocity.y * 0.5 + (Math.random() - 0.5) * 10,
         },
@@ -148,9 +198,11 @@ export function useLightBallGame() {
           y: Math.sin(angle) * speed,
         },
         size,
-        color: `rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`,
+        color: `rgba(255, 255, 255, ${0.5 + Math.random() * 0.3})`,
         birthTime: Date.now(),
         lifetime: PARTICLE_CONFIG.TRAIL_LIFETIME,
+        type: 'trail',
+        glow: 0.8,
       });
     }
   }
@@ -447,6 +499,11 @@ export function useLightBallGame() {
       // 应用摩擦力
       particle.velocity.x *= PARTICLE_CONFIG.FRICTION;
       particle.velocity.y *= PARTICLE_CONFIG.FRICTION;
+
+      // 更新旋转
+      if (particle.rotationSpeed !== undefined) {
+        particle.rotation = (particle.rotation || 0) + particle.rotationSpeed;
+      }
 
       aliveParticles.push(particle);
     }
