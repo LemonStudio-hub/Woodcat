@@ -9,6 +9,14 @@
           class="ball"
           :style="getBallStyle"
         ></div>
+
+        <!-- 粒子 -->
+        <div
+          v-for="particle in particles"
+          :key="particle.id"
+          class="particle"
+          :style="getParticleStyle(particle)"
+        ></div>
       </div>
 
       <!-- 退出按钮 -->
@@ -59,7 +67,10 @@ const router = useRouter();
 // 使用游戏逻辑
 const {
   ball,
+  particles,
+  animationState,
   moveBall,
+  stopBall,
   startGameLoop,
   stopGameLoop,
 } = useLightBallGame();
@@ -190,15 +201,39 @@ const canvasStyle = computed(() => {
  * 球样式
  */
 const getBallStyle = computed(() => {
+  const pulseScale = 1 + Math.sin(animationState.value.pulse) * 0.05;
+  const glowSize = BALL_CONFIG.GLOW_SIZE * animationState.value.glowIntensity;
+
   return {
     left: `${ball.value.position.x}px`,
     top: `${ball.value.position.y}px`,
     width: `${ball.value.radius * 2}px`,
     height: `${ball.value.radius * 2}px`,
     backgroundColor: BALL_CONFIG.COLOR,
-    boxShadow: `0 0 ${BALL_CONFIG.GLOW_SIZE}px ${BALL_CONFIG.GLOW_COLOR}`,
+    boxShadow: `0 0 ${glowSize}px ${BALL_CONFIG.GLOW_COLOR}`,
+    transform: `scale(${pulseScale})`,
   };
 });
+
+/**
+ * 粒子样式
+ */
+function getParticleStyle(particle: any) {
+  const now = Date.now();
+  const age = now - particle.birthTime;
+  const progress = age / particle.lifetime;
+  const opacity = 1 - progress;
+
+  return {
+    left: `${particle.position.x - particle.size / 2}px`,
+    top: `${particle.position.y - particle.size / 2}px`,
+    width: `${particle.size}px`,
+    height: `${particle.size}px`,
+    backgroundColor: particle.color,
+    opacity: opacity,
+    transform: `scale(${1 - progress * 0.5})`,
+  };
+}
 
 /**
  * 摇杆手柄样式
@@ -268,6 +303,7 @@ function handleJoystickTouchEnd(event: TouchEvent): void {
   event.preventDefault();
   joystickActive.value = false;
   joystickPosition.value = { x: 0, y: 0 };
+  stopBall();
 }
 
 /**
@@ -386,7 +422,15 @@ onUnmounted(() => {
   border-radius: 50%;
   transform: translate(-50%, -50%);
   z-index: 10;
-  animation: ballPulse 2s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+/* 粒子 */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 @keyframes ballPulse {

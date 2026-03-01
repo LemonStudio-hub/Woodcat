@@ -6,11 +6,11 @@
  * 球配置
  */
 export const BALL_CONFIG = {
-  RADIUS: 30,
+  RADIUS: 15,
   SPEED: 8,
   COLOR: '#ffffff',
   GLOW_COLOR: 'rgba(255, 255, 255, 0.6)',
-  GLOW_SIZE: 50,
+  GLOW_SIZE: 30,
 } as const;
 
 /**
@@ -19,6 +19,19 @@ export const BALL_CONFIG = {
 export const GAME_CONFIG = {
   SCREEN_WIDTH: 800,
   SCREEN_HEIGHT: 600,
+} as const;
+
+/**
+ * 粒子配置
+ */
+export const PARTICLE_CONFIG = {
+  COUNT: 12,           // 粒子数量
+  LIFETIME: 800,       // 粒子存活时间（毫秒）
+  MIN_SIZE: 2,         // 最小粒子大小
+  MAX_SIZE: 5,         // 最大粒子大小
+  MIN_SPEED: 2,        // 最小速度
+  MAX_SPEED: 5,        // 最大速度
+  FRICTION: 0.98,      // 摩擦力
 } as const;
 
 /**
@@ -35,6 +48,19 @@ export interface Position {
 export interface Ball {
   position: Position;
   radius: number;
+}
+
+/**
+ * 粒子接口
+ */
+export interface Particle {
+  id: number;
+  position: Position;
+  velocity: Position;
+  size: number;
+  color: string;
+  birthTime: number;
+  lifetime: number;
 }
 
 /**
