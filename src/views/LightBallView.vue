@@ -250,7 +250,7 @@ function getParticleStyle(particle: any) {
  */
 const joystickHandleStyle = computed(() => {
   return {
-    transform: `translate(${joystickPosition.value.x}px, ${joystickPosition.value.y}px)`,
+    transform: `translate(${joystickPosition.value.x}px, ${joystickPosition.value.y}px) translateZ(0)`,
   };
 });
 
@@ -421,6 +421,8 @@ onUnmounted(() => {
   max-width: 900px;
   height: 100vh;
   max-height: 800px;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* 游戏画布 */
@@ -430,15 +432,21 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   overflow: hidden;
   flex: 1;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* 球 */
 .ball {
   position: absolute;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateZ(0);
   z-index: 10;
   will-change: transform, box-shadow;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 粒子 */
@@ -447,6 +455,10 @@ onUnmounted(() => {
   border-radius: 50%;
   pointer-events: none;
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes ballPulse {
@@ -474,18 +486,21 @@ onUnmounted(() => {
   font-size: var(--font-size-lg);
   color: var(--color-white);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
   z-index: 60;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .exit-button:hover {
   background: rgba(255, 100, 100, 0.3);
   border-color: rgba(255, 100, 100, 0.5);
-  transform: rotate(90deg);
+  transform: translateZ(0) rotate(90deg);
 }
 
 .exit-button:active {
-  transform: rotate(90deg) scale(0.9);
+  transform: translateZ(0) rotate(90deg) scale(0.9);
 }
 
 /* 虚拟摇杆 */
@@ -504,8 +519,10 @@ onUnmounted(() => {
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   backdrop-filter: blur(10px);
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateZ(0);
   transition: opacity 0.2s ease;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .joystick-handle {
@@ -518,7 +535,10 @@ onUnmounted(() => {
   margin-left: -JOYSTICK_CONFIG.HANDLE_RADIUS;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   transition: transform 0.05s ease-out;
 }
 
