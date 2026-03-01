@@ -54,6 +54,12 @@ export function useLightBallGame() {
   // 难度增加计时器
   let difficultyTimer: number | null = null;
 
+  // 游戏开始时间
+  let gameStartTime: number | null = null;
+
+  // 存活时间（秒）
+  const survivalTime = ref<number>(0);
+
   // ========== 更新屏幕尺寸 ==========
   function updateScreenSize(width: number, height: number): void {
     screenWidth.value = width;
@@ -253,6 +259,24 @@ export function useLightBallGame() {
       // 重启生成计时器以应用新的生成率
       stopEnemySpawning();
       startEnemySpawning();
+
+      // 根据存活时间增加所有现有敌人和新生敌人的速度
+      // 每生存10秒，速度增加0.5
+      const timeBasedSpeedIncrease = Math.floor(survivalTime.value / 10) * 0.5;
+      const baseSpeed = ENEMY_BALL_CONFIG.SPEED;
+      const newSpeed = baseSpeed + timeBasedSpeedIncrease;
+
+      // 更新现有敌人的速度
+      for (const enemy of enemyBalls.value) {
+        if (!enemy.isExploding) {
+          const currentSpeed = Math.sqrt(enemy.velocity.x ** 2 + enemy.velocity.y ** 2);
+          if (currentSpeed > 0) {
+            const speedRatio = newSpeed / currentSpeed;
+            enemy.velocity.x *= speedRatio;
+            enemy.velocity.y *= speedRatio;
+          }
+        }
+      }
     }, ENEMY_BALL_CONFIG.DIFFICULTY_INCREASE_INTERVAL);
   }
 
@@ -266,6 +290,10 @@ export function useLightBallGame() {
 
   // ========== 重新开始游戏 ==========
   function restartGame(): void {
+    // 重置游戏开始时间和存活时间
+    gameStartTime = Date.now();
+    survivalTime.value = 0;
+
     // 重置球位置
     ball.value.position = { x: screenWidth.value / 2, y: screenHeight.value / 2 };
     ballVelocity.value = { x: 0, y: 0 };
@@ -437,6 +465,10 @@ export function useLightBallGame() {
 
   // ========== 游戏循环 ==========
   function startGameLoop(): void {
+    // 记录游戏开始时间
+    gameStartTime = Date.now();
+    survivalTime.value = 0;
+
     // 开始生成敌人和难度增加
     startEnemySpawning();
     startDifficultyIncrease();
@@ -450,6 +482,13 @@ export function useLightBallGame() {
     animationTimer = window.setInterval(() => {
       updateAnimation();
     }, 50); // 动画更新频率
+
+    // 每秒更新存活时间
+    animationTimer = window.setInterval(() => {
+      if (gameStartTime) {
+        survivalTime.value = Math.floor((Date.now() - gameStartTime) / 1000);
+      }
+    }, 1000);
   }
 
   function stopGameLoop(): void {
@@ -478,6 +517,7 @@ export function useLightBallGame() {
     enemyBalls,
     animationState,
     gameState,
+    survivalTime,
     // 方法
     moveBall,
     stopBall,

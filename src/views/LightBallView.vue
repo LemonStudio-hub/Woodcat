@@ -61,6 +61,7 @@
       <div class="game-over-content">
         <div class="game-over-icon">💥</div>
         <div class="game-over-title">游戏结束</div>
+        <div class="survival-time">存活时间: {{ survivalTime }} 秒</div>
         <div class="game-over-buttons">
           <button class="restart-button" @click="handleRestart">
             重新开始
@@ -99,6 +100,7 @@ const {
   enemyBalls,
   animationState,
   gameState,
+  survivalTime,
   moveBall,
   stopBall,
   startGameLoop,
@@ -705,6 +707,13 @@ onUnmounted(() => {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.survival-time {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  animation: fadeIn 0.4s ease-out 0.4s both;
 }
 
 .game-over-buttons {
