@@ -67,12 +67,14 @@ const router = useRouter();
 // 使用游戏逻辑
 const {
   ball,
+  ballVelocity,
   particles,
   animationState,
   moveBall,
   stopBall,
   startGameLoop,
   stopGameLoop,
+  updateScreenSize,
 } = useLightBallGame();
 
 // 移动设备检测
@@ -201,17 +203,23 @@ const canvasStyle = computed(() => {
  * 球样式
  */
 const getBallStyle = computed(() => {
-  const pulseScale = 1 + Math.sin(animationState.value.pulse) * 0.05;
-  const glowSize = BALL_CONFIG.GLOW_SIZE * animationState.value.glowIntensity;
-
+  const pulseScale = 1 + Math.sin(animationState.value.pulse) * 0.08;
+  const glowSize = BALL_CONFIG.GLOW_SIZE * (0.8 + animationState.value.glowIntensity * 0.4);
+  const isMoving = ballVelocity.value.x !== 0 || ballVelocity.value.y !== 0;
+  
   return {
     left: `${ball.value.position.x}px`,
     top: `${ball.value.position.y}px`,
     width: `${ball.value.radius * 2}px`,
     height: `${ball.value.radius * 2}px`,
     backgroundColor: BALL_CONFIG.COLOR,
-    boxShadow: `0 0 ${glowSize}px ${BALL_CONFIG.GLOW_COLOR}`,
+    boxShadow: `
+      0 0 ${glowSize}px ${BALL_CONFIG.GLOW_COLOR},
+      0 0 ${glowSize * 0.5}px rgba(255, 255, 255, 0.4),
+      inset 0 0 ${BALL_CONFIG.RADIUS}px rgba(255, 255, 255, 0.2)
+    `,
     transform: `scale(${pulseScale})`,
+    transition: isMoving ? 'none' : 'transform 0.3s ease-out',
   };
 });
 
@@ -223,6 +231,7 @@ function getParticleStyle(particle: any) {
   const age = now - particle.birthTime;
   const progress = age / particle.lifetime;
   const opacity = 1 - progress;
+  const scale = 1 - progress * 0.6;
 
   return {
     left: `${particle.position.x - particle.size / 2}px`,
@@ -231,7 +240,8 @@ function getParticleStyle(particle: any) {
     height: `${particle.size}px`,
     backgroundColor: particle.color,
     opacity: opacity,
-    transform: `scale(${1 - progress * 0.5})`,
+    transform: `scale(${scale})`,
+    boxShadow: `0 0 ${particle.size * 2}px ${particle.color}`,
   };
 }
 
@@ -349,6 +359,12 @@ function goBack(): void {
  */
 onMounted(() => {
   checkMobile();
+  
+  // 更新屏幕尺寸
+  const width = isMobile.value ? window.innerWidth : GAME_CONFIG.SCREEN_WIDTH;
+  const height = isMobile.value ? window.innerHeight : GAME_CONFIG.SCREEN_HEIGHT;
+  updateScreenSize(width, height);
+  
   startGameLoop();
   
   enterFullscreen();

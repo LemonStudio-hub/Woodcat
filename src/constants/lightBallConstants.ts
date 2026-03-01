@@ -25,13 +25,15 @@ export const GAME_CONFIG = {
  * 粒子配置
  */
 export const PARTICLE_CONFIG = {
-  COUNT: 12,           // 粒子数量
-  LIFETIME: 800,       // 粒子存活时间（毫秒）
+  COUNT: 15,           // 碰撞粒子数量
+  TRAIL_COUNT: 2,      // 尾迹粒子数量
+  LIFETIME: 1000,      // 粒子存活时间（毫秒）
+  TRAIL_LIFETIME: 500, // 尾迹粒子存活时间（毫秒）
   MIN_SIZE: 2,         // 最小粒子大小
-  MAX_SIZE: 5,         // 最大粒子大小
+  MAX_SIZE: 6,         // 最大粒子大小
   MIN_SPEED: 2,        // 最小速度
-  MAX_SPEED: 5,        // 最大速度
-  FRICTION: 0.98,      // 摩擦力
+  MAX_SPEED: 6,        // 最大速度
+  FRICTION: 0.97,      // 摩擦力
 } as const;
 
 /**
