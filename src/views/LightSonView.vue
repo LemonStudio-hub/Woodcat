@@ -61,6 +61,15 @@
           <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
           <span>移动</span>
         </div>
+
+        <!-- 退出按钮 -->
+        <button
+          v-if="gameState === GameState.PLAYING"
+          class="exit-button"
+          @click="handleExit"
+        >
+          ✕
+        </button>
       </div>
 
       <!-- 虚拟摇杆 -->
@@ -71,8 +80,13 @@
         @touchmove="handleJoystickTouchMove"
         @touchend="handleJoystickTouchEnd"
         @touchcancel="handleJoystickTouchEnd"
+        ref="joystickContainer"
       >
-        <div class="joystick-base" ref="joystickBase">
+        <div
+          class="joystick-base"
+          ref="joystickBase"
+          :style="joystickBaseStyle"
+        >
           <div
             class="joystick-handle"
             :style="joystickHandleStyle"
@@ -141,7 +155,7 @@
  * 光之子游戏视图
  */
 
-import { onMounted, onUnmounted, computed, ref } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLightSonGame } from '@/composables/useLightSonGame';
 import {
@@ -153,6 +167,10 @@ import {
 } from '@/constants/lightSonConstants';
 
 const router = useRouter();
+
+// 容器引用
+const gameContainer = ref<HTMLElement | null>(null);
+const joystickContainer = ref<HTMLElement | null>(null);
 
 // 使用游戏逻辑
 const {
@@ -174,6 +192,119 @@ const isMobile = ref(false);
 const joystickBase = ref<HTMLElement | null>(null);
 const joystickPosition = ref({ x: 0, y: 0 });
 const joystickActive = ref(false);
+const joystickCenter = ref({ x: 0, y: 0 });
+const joystickScreenPosition = ref({ x: 0, y: 0 }); // 摇杆在屏幕上的位置
+
+// 全屏控制
+const isFullscreen = ref(false);
+
+/**
+ * 进入全屏
+ */
+function enterFullscreen(): void {
+  try {
+    const element = document.documentElement;
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if ((element as any).webkitRequestFullscreen) {
+      (element as any).webkitRequestFullscreen();
+    } else if ((element as any).mozRequestFullScreen) {
+      (element as any).mozRequestFullScreen();
+    } else if ((element as any).msRequestFullscreen) {
+      (element as any).msRequestFullscreen();
+    }
+  } catch (error) {
+    console.error('Fullscreen not supported:', error);
+  }
+}
+
+/**
+ * 退出全屏
+ */
+function exitFullscreen(): void {
+  try {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) {
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).mozCancelFullScreen) {
+      (document as any).mozCancelFullScreen();
+    } else if ((document as any).msExitFullscreen) {
+      (document as any).msExitFullscreen();
+    }
+  } catch (error) {
+    console.error('Exit fullscreen error:', error);
+  }
+}
+
+/**
+ * 检测全屏状态
+ */
+function checkFullscreen(): void {
+  isFullscreen.value = !!(
+    document.fullscreenElement ||
+    (document as any).webkitFullscreenElement ||
+    (document as any).mozFullScreenElement ||
+    (document as any).msFullscreenElement
+  );
+}
+
+/**
+ * 禁用滚动
+ */
+function disableScroll(): void {
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+  document.body.style.height = '100%';
+}
+
+/**
+ * 启用滚动
+ */
+function enableScroll(): void {
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  document.body.style.height = '';
+}
+
+/**
+ * 隐藏导航栏
+ */
+function hideNavigation(): void {
+  const header = document.querySelector('.header');
+  if (header) {
+    (header as HTMLElement).style.display = 'none';
+  }
+}
+
+/**
+ * 显示导航栏
+ */
+function showNavigation(): void {
+  const header = document.querySelector('.header');
+  if (header) {
+    (header as HTMLElement).style.display = '';
+  }
+}
+
+/**
+ * 监听游戏状态变化
+ */
+watch(gameState, (newState) => {
+  if (newState === GameState.PLAYING) {
+    // 开始游戏时：全屏、禁用滚动、隐藏导航
+    enterFullscreen();
+    disableScroll();
+    hideNavigation();
+  } else if (newState === GameState.GAME_OVER || newState === GameState.READY) {
+    // 游戏结束或准备时：退出全屏、启用滚动、显示导航
+    exitFullscreen();
+    enableScroll();
+    showNavigation();
+  }
+}, { immediate: true });
 
 /**
  * 画布样式
@@ -267,6 +398,21 @@ const joystickHandleStyle = computed(() => {
 });
 
 /**
+ * 摇杆底座样式
+ */
+const joystickBaseStyle = computed(() => {
+  if (!joystickActive.value) {
+    return {
+      display: 'none',
+    };
+  }
+  return {
+    left: `${joystickScreenPosition.value.x}px`,
+    top: `${joystickScreenPosition.value.y}px`,
+  };
+});
+
+/**
  * 检测移动设备
  */
 function checkMobile(): void {
@@ -279,6 +425,19 @@ function checkMobile(): void {
 function handleJoystickTouchStart(event: TouchEvent): void {
   event.preventDefault();
   joystickActive.value = true;
+
+  const touch = event.touches[0];
+  
+  // 设置摇杆中心为触摸位置
+  joystickScreenPosition.value = {
+    x: touch.clientX - JOYSTICK_CONFIG.RADIUS,
+    y: touch.clientY - JOYSTICK_CONFIG.RADIUS,
+  };
+  joystickCenter.value = {
+    x: touch.clientX,
+    y: touch.clientY,
+  };
+
   updateJoystick(event);
 }
 
@@ -311,14 +470,10 @@ function handleJoystickTouchEnd(event: TouchEvent): void {
  */
 function updateJoystick(event: TouchEvent): void {
   const touch = event.touches[0];
-  if (!joystickBase.value) return;
 
-  const rect = joystickBase.value.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-
-  let dx = touch.clientX - centerX;
-  let dy = touch.clientY - centerY;
+  // 计算相对于摇杆中心的偏移
+  let dx = touch.clientX - joystickCenter.value.x;
+  let dy = touch.clientY - joystickCenter.value.y;
 
   // 计算距离
   const distance = Math.sqrt(dx * dx + dy * dy);
@@ -368,22 +523,75 @@ function goBack(): void {
 }
 
 /**
+ * 退出游戏
+ */
+function handleExit(): void {
+  // 结束游戏
+  const { endGame } = useLightSonGame();
+  endGame();
+  
+  // 退出全屏
+  exitFullscreen();
+  
+  // 启用滚动
+  enableScroll();
+  
+  // 显示导航栏
+  showNavigation();
+  
+  // 返回首页
+  goBack();
+}
+
+/**
  * 组件挂载时添加事件监听
  */
 onMounted(() => {
   checkMobile();
+  
+  // 添加键盘事件监听
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+  
+  // 添加全屏变化监听
+  document.addEventListener('fullscreenchange', checkFullscreen);
+  document.addEventListener('webkitfullscreenchange', checkFullscreen);
+  document.addEventListener('mozfullscreenchange', checkFullscreen);
+  document.addEventListener('MSFullscreenChange', checkFullscreen);
+  
+  // 添加窗口大小变化监听
   window.addEventListener('resize', checkMobile);
+  
+  // 初始状态：禁用滚动
+  if (gameState.value === GameState.PLAYING) {
+    disableScroll();
+    hideNavigation();
+  }
 });
 
 /**
  * 组件卸载时移除事件监听
  */
 onUnmounted(() => {
+  // 移除键盘事件监听
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup', onKeyUp);
+  
+  // 移除全屏变化监听
+  document.removeEventListener('fullscreenchange', checkFullscreen);
+  document.removeEventListener('webkitfullscreenchange', checkFullscreen);
+  document.removeEventListener('mozfullscreenchange', checkFullscreen);
+  document.removeEventListener('MSFullscreenChange', checkFullscreen);
+  
+  // 移除窗口大小变化监听
   window.removeEventListener('resize', checkMobile);
+  
+  // 恢复滚动和导航
+  enableScroll();
+  showNavigation();
+  
+  // 退出全屏
+  exitFullscreen();
 });
 </script>
 
@@ -556,26 +764,54 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+/* 退出按钮 */
+.exit-button {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: var(--font-size-lg);
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 60;
+}
+
+.exit-button:hover {
+  background: rgba(255, 100, 100, 0.3);
+  border-color: rgba(255, 100, 100, 0.5);
+  transform: rotate(90deg);
+}
+
+.exit-button:active {
+  transform: rotate(90deg) scale(0.9);
+}
+
 /* 虚拟摇杆 */
 .virtual-joystick {
   position: fixed;
-  bottom: var(--spacing-8);
-  left: 50%;
-  transform: translateX(-50%);
-  width: JOYSTICK_CONFIG.RADIUS * 2;
-  height: JOYSTICK_CONFIG.RADIUS * 2;
+  inset: 0;
   z-index: 50;
   touch-action: none;
 }
 
 .joystick-base {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  width: JOYSTICK_CONFIG.RADIUS * 2;
+  height: JOYSTICK_CONFIG.RADIUS * 2;
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(100, 200, 255, 0.3);
   border-radius: 50%;
   backdrop-filter: blur(10px);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s ease;
 }
 
 .joystick-handle {
@@ -875,10 +1111,6 @@ onUnmounted(() => {
 
   .game-over-buttons {
     flex-direction: column;
-  }
-
-  .virtual-joystick {
-    bottom: var(--spacing-4);
   }
 
   .overlay-content {
