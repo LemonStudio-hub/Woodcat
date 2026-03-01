@@ -3,7 +3,7 @@
     <!-- 游戏容器 -->
     <div class="game-container" ref="gameContainer">
       <!-- 游戏画布 -->
-      <div class="game-canvas" :style="{ width: `${GAME_CONFIG.SCREEN_WIDTH}px`, height: `${GAME_CONFIG.SCREEN_HEIGHT}px` }">
+      <div class="game-canvas" :style="canvasStyle">
         <!-- 玩家 -->
         <div
           v-if="gameState !== GameState.READY"
@@ -18,6 +18,14 @@
           class="enemy"
           :class="{ 'enemy--exploding': enemy.isExploding }"
           :style="getEnemyStyle(enemy)"
+        ></div>
+
+        <!-- 粒子 -->
+        <div
+          v-for="particle in particles"
+          :key="particle.id"
+          class="particle"
+          :style="getParticleStyle(particle)"
         ></div>
       </div>
 
@@ -48,12 +56,27 @@
         </div>
 
         <!-- 操作提示 -->
-        <div class="controls-hint" v-if="gameState === GameState.PLAYING">
+        <div class="controls-hint" v-if="gameState === GameState.PLAYING && !isMobile">
           <span>使用</span>
           <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-          <span>或</span>
-          <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
           <span>移动</span>
+        </div>
+      </div>
+
+      <!-- 虚拟摇杆 -->
+      <div
+        v-if="gameState === GameState.PLAYING && isMobile"
+        class="virtual-joystick"
+        @touchstart="handleJoystickTouchStart"
+        @touchmove="handleJoystickTouchMove"
+        @touchend="handleJoystickTouchEnd"
+        @touchcancel="handleJoystickTouchEnd"
+      >
+        <div class="joystick-base" ref="joystickBase">
+          <div
+            class="joystick-handle"
+            :style="joystickHandleStyle"
+          ></div>
         </div>
       </div>
 
@@ -69,7 +92,7 @@
             <h3>游戏规则</h3>
             <ul>
               <li>操控发光的小球躲避彩色敌人</li>
-              <li>敌人会爆炸，避开爆炸范围</li>
+              <li>敌人靠近时会爆炸，避开爆炸范围</li>
               <li>时间越久，敌人越多</li>
               <li>尽可能存活更长时间</li>
             </ul>
@@ -118,7 +141,7 @@
  * 光之子游戏视图
  */
 
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLightSonGame } from '@/composables/useLightSonGame';
 import {
@@ -126,6 +149,7 @@ import {
   PLAYER_CONFIG,
   ENEMY_CONFIG,
   GAME_CONFIG,
+  JOYSTICK_CONFIG,
 } from '@/constants/lightSonConstants';
 
 const router = useRouter();
@@ -135,6 +159,7 @@ const {
   gameState,
   player,
   enemies,
+  particles,
   gameStats,
   survivalTimeFormatted,
   difficulty,
@@ -143,6 +168,30 @@ const {
   handleKeyDown,
   handleKeyUp,
 } = useLightSonGame();
+
+// 移动设备检测
+const isMobile = ref(false);
+const joystickBase = ref<HTMLElement | null>(null);
+const joystickPosition = ref({ x: 0, y: 0 });
+const joystickActive = ref(false);
+
+/**
+ * 画布样式
+ */
+const canvasStyle = computed(() => {
+  if (isMobile.value) {
+    // 移动端：占满容器
+    return {
+      width: '100%',
+      height: '100%',
+    };
+  }
+  // 桌面端：固定尺寸
+  return {
+    width: `${GAME_CONFIG.SCREEN_WIDTH}px`,
+    height: `${GAME_CONFIG.SCREEN_HEIGHT}px`,
+  };
+});
 
 /**
  * 玩家样式
@@ -190,16 +239,123 @@ function getEnemyStyle(enemy: any) {
 }
 
 /**
+ * 粒子样式
+ */
+function getParticleStyle(particle: any) {
+  const now = Date.now();
+  const age = now - particle.birthTime;
+  const progress = age / particle.lifetime;
+  const opacity = 1 - progress;
+
+  return {
+    left: `${particle.position.x - particle.size / 2}px`,
+    top: `${particle.position.y - particle.size / 2}px`,
+    width: `${particle.size}px`,
+    height: `${particle.size}px`,
+    backgroundColor: particle.color,
+    opacity: opacity,
+  };
+}
+
+/**
+ * 摇杆手柄样式
+ */
+const joystickHandleStyle = computed(() => {
+  return {
+    transform: `translate(${joystickPosition.value.x}px, ${joystickPosition.value.y}px)`,
+  };
+});
+
+/**
+ * 检测移动设备
+ */
+function checkMobile(): void {
+  isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+}
+
+/**
+ * 处理摇杆触摸开始
+ */
+function handleJoystickTouchStart(event: TouchEvent): void {
+  event.preventDefault();
+  joystickActive.value = true;
+  updateJoystick(event);
+}
+
+/**
+ * 处理摇杆触摸移动
+ */
+function handleJoystickTouchMove(event: TouchEvent): void {
+  event.preventDefault();
+  if (!joystickActive.value) return;
+  updateJoystick(event);
+}
+
+/**
+ * 处理摇杆触摸结束
+ */
+function handleJoystickTouchEnd(event: TouchEvent): void {
+  event.preventDefault();
+  joystickActive.value = false;
+  joystickPosition.value = { x: 0, y: 0 };
+
+  // 停止玩家移动
+  player.value.isMovingUp = false;
+  player.value.isMovingDown = false;
+  player.value.isMovingLeft = false;
+  player.value.isMovingRight = false;
+}
+
+/**
+ * 更新摇杆位置
+ */
+function updateJoystick(event: TouchEvent): void {
+  const touch = event.touches[0];
+  if (!joystickBase.value) return;
+
+  const rect = joystickBase.value.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  let dx = touch.clientX - centerX;
+  let dy = touch.clientY - centerY;
+
+  // 计算距离
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const maxDistance = JOYSTICK_CONFIG.MAX_DISTANCE;
+
+  // 限制摇杆移动范围
+  if (distance > maxDistance) {
+    dx = (dx / distance) * maxDistance;
+    dy = (dy / distance) * maxDistance;
+  }
+
+  // 检查死区
+  if (distance < JOYSTICK_CONFIG.DEAD_ZONE) {
+    dx = 0;
+    dy = 0;
+  }
+
+  joystickPosition.value = { x: dx, y: dy };
+
+  // 根据摇杆位置更新玩家移动状态
+  player.value.isMovingUp = dy < -10;
+  player.value.isMovingDown = dy > 10;
+  player.value.isMovingLeft = dx < -10;
+  player.value.isMovingRight = dx > 10;
+}
+
+/**
  * 处理键盘事件
  */
 function onKeyDown(event: KeyboardEvent): void {
-  if (gameState.value === GameState.PLAYING) {
+  if (gameState.value === GameState.PLAYING && !isMobile.value) {
     handleKeyDown(event.code);
   }
 }
 
 function onKeyUp(event: KeyboardEvent): void {
-  if (gameState.value === GameState.PLAYING) {
+  if (gameState.value === GameState.PLAYING && !isMobile.value) {
     handleKeyUp(event.code);
   }
 }
@@ -215,8 +371,10 @@ function goBack(): void {
  * 组件挂载时添加事件监听
  */
 onMounted(() => {
+  checkMobile();
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('resize', checkMobile);
 });
 
 /**
@@ -225,6 +383,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup', onKeyUp);
+  window.removeEventListener('resize', checkMobile);
 });
 </script>
 
@@ -239,7 +398,7 @@ onUnmounted(() => {
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-  padding: var(--spacing-4);
+  padding: var(--spacing-2);
 }
 
 /* 游戏容器 */
@@ -247,7 +406,11 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
+  width: 100%;
+  max-width: 900px;
+  height: 100vh;
+  max-height: 800px;
 }
 
 /* 游戏画布 */
@@ -258,6 +421,7 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0, 200, 255, 0.2);
+  flex: 1;
 }
 
 /* 玩家 */
@@ -291,12 +455,20 @@ onUnmounted(() => {
   z-index: 15;
 }
 
+/* 粒子 */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 20;
+  transition: opacity 0.05s ease-out;
+}
+
 /* 游戏UI */
 .game-ui {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(100, 200, 255, 0.2);
@@ -307,7 +479,7 @@ onUnmounted(() => {
 .stats-panel {
   display: flex;
   justify-content: space-around;
-  gap: var(--spacing-4);
+  gap: var(--spacing-2);
 }
 
 .stat-item {
@@ -384,6 +556,42 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+/* 虚拟摇杆 */
+.virtual-joystick {
+  position: fixed;
+  bottom: var(--spacing-8);
+  left: 50%;
+  transform: translateX(-50%);
+  width: JOYSTICK_CONFIG.RADIUS * 2;
+  height: JOYSTICK_CONFIG.RADIUS * 2;
+  z-index: 50;
+  touch-action: none;
+}
+
+.joystick-base {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(100, 200, 255, 0.3);
+  border-radius: 50%;
+  backdrop-filter: blur(10px);
+}
+
+.joystick-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: JOYSTICK_CONFIG.HANDLE_RADIUS * 2;
+  height: JOYSTICK_CONFIG.HANDLE_RADIUS * 2;
+  margin-top: -JOYSTICK_CONFIG.HANDLE_RADIUS;
+  margin-left: -JOYSTICK_CONFIG.HANDLE_RADIUS;
+  background: linear-gradient(135deg, #00ffff 0%, #0088ff 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
+  transition: transform 0.05s ease-out;
+}
+
 /* 遮罩层 */
 .overlay {
   position: absolute;
@@ -418,6 +626,7 @@ onUnmounted(() => {
   text-align: center;
   box-shadow: 0 0 60px rgba(0, 200, 255, 0.3);
   animation: slideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  max-width: 90%;
 }
 
 @keyframes slideIn {
@@ -454,7 +663,7 @@ onUnmounted(() => {
 }
 
 .title-text {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #00ffff 0%, #0088ff 100%);
   -webkit-background-clip: text;
@@ -536,7 +745,7 @@ onUnmounted(() => {
 
 /* 游戏结束界面 */
 .game-over-icon {
-  font-size: 5rem;
+  font-size: 4rem;
   animation: explode 0.5s ease-out;
 }
 
@@ -553,7 +762,7 @@ onUnmounted(() => {
 }
 
 .game-over-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--color-white);
   text-shadow: 0 0 20px rgba(255, 100, 100, 0.5);
@@ -584,7 +793,7 @@ onUnmounted(() => {
 }
 
 .final-stat-value {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-white);
 }
@@ -630,21 +839,33 @@ onUnmounted(() => {
 }
 
 /* 响应式设计 */
-@media (max-width: 900px) {
-  .game-canvas {
-    transform: scale(0.8);
-    transform-origin: center;
-  }
-}
-
 @media (max-width: 640px) {
-  .game-canvas {
-    transform: scale(0.6);
+  .game-container {
+    padding: 0;
+    max-height: 100vh;
+    height: 100vh;
+  }
+
+  .game-ui {
+    padding: var(--spacing-2);
+    gap: var(--spacing-1);
   }
 
   .stats-panel {
-    flex-direction: column;
-    gap: var(--spacing-2);
+    flex-direction: row;
+    gap: var(--spacing-1);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .difficulty-indicator {
+    display: none;
   }
 
   .final-stats {
@@ -654,6 +875,23 @@ onUnmounted(() => {
 
   .game-over-buttons {
     flex-direction: column;
+  }
+
+  .virtual-joystick {
+    bottom: var(--spacing-4);
+  }
+
+  .overlay-content {
+    padding: var(--spacing-6);
+    width: 95%;
+  }
+
+  .title-text {
+    font-size: 2rem;
+  }
+
+  .title-icon {
+    font-size: 3rem;
   }
 }
 </style>

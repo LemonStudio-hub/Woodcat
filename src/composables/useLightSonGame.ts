@@ -7,9 +7,11 @@ import {
   GameState,
   PLAYER_CONFIG,
   ENEMY_CONFIG,
+  PARTICLE_CONFIG,
   GAME_CONFIG,
   type Player,
   type Enemy,
+  type Particle,
   type GameStats,
   KEY_BINDINGS,
 } from '@/constants/lightSonConstants';
@@ -28,6 +30,7 @@ export function useLightSonGame() {
     isMovingRight: false,
   });
   const enemies = ref<Enemy[]>([]);
+  const particles = ref<Particle[]>([]);
   const gameStats = ref<GameStats>({
     survivalTime: 0,
     enemiesDodged: 0,
@@ -41,6 +44,7 @@ export function useLightSonGame() {
   let difficultyTimer: number | null = null;
   let currentSpawnRate: number = GAME_CONFIG.INITIAL_SPAWN_RATE;
   let enemyIdCounter = 0;
+  let particleIdCounter = 0;
 
   // ========== 计算属性 ==========
   const survivalTimeFormatted = computed(() => {
@@ -131,11 +135,15 @@ export function useLightSonGame() {
     // 更新敌人位置
     updateEnemies();
 
+    // 更新粒子
+    updateParticles();
+
     // 检测碰撞
     checkCollisions();
 
-    // 清理已消失的敌人
+    // 清理已消失的敌人和粒子
     cleanupEnemies();
+    cleanupParticles();
   }
 
   // ========== 玩家控制 ==========
@@ -265,6 +273,22 @@ export function useLightSonGame() {
     });
   }
 
+  // ========== 粒子更新 ==========
+  function updateParticles(): void {
+    particles.value.forEach((particle) => {
+      // 更新位置
+      particle.position.x += particle.velocity.vx;
+      particle.position.y += particle.velocity.vy;
+
+      // 应用摩擦力
+      particle.velocity.vx *= PARTICLE_CONFIG.FRICTION;
+      particle.velocity.vy *= PARTICLE_CONFIG.FRICTION;
+
+      // 重力效果（可选）
+      particle.velocity.vy += 0.1;
+    });
+  }
+
   // ========== 碰撞检测 ==========
   function checkCollisions(): void {
     const { position: playerPos, radius: playerRadius } = player.value;
@@ -282,12 +306,12 @@ export function useLightSonGame() {
         return;
       }
 
-      // 检测玩家是否直接碰到敌人
+      // 检测玩家是否靠近敌人（触发爆炸）
       const dx = playerPos.x - enemy.position.x;
       const dy = playerPos.y - enemy.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < playerRadius + enemy.radius) {
+      if (distance < ENEMY_CONFIG.EXPLOSION_DISTANCE) {
         // 敌人爆炸
         triggerExplosion(enemy);
       }
@@ -299,8 +323,35 @@ export function useLightSonGame() {
     enemy.explosionStartTime = Date.now();
     gameStats.value.enemiesExploded++;
 
+    // 生成粒子
+    createParticles(enemy.position, enemy.color);
+
     audioService.play(SoundType.EXPLOSION);
     vibrationService.vibrate(VibrationType.EXPLOSION);
+  }
+
+  // ========== 粒子生成 ==========
+  function createParticles(position: { x: number; y: number }, color: string): void {
+    for (let i = 0; i < PARTICLE_CONFIG.COUNT; i++) {
+      const angle = (Math.PI * 2 * i) / PARTICLE_CONFIG.COUNT + Math.random() * 0.5;
+      const speed = PARTICLE_CONFIG.MIN_SPEED + Math.random() * (PARTICLE_CONFIG.MAX_SPEED - PARTICLE_CONFIG.MIN_SPEED);
+      const size = PARTICLE_CONFIG.MIN_SIZE + Math.random() * (PARTICLE_CONFIG.MAX_SIZE - PARTICLE_CONFIG.MIN_SIZE);
+
+      const particle: Particle = {
+        id: particleIdCounter++,
+        position: { x: position.x, y: position.y },
+        velocity: {
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+        },
+        size,
+        color,
+        lifetime: PARTICLE_CONFIG.LIFETIME,
+        birthTime: Date.now(),
+      };
+
+      particles.value.push(particle);
+    }
   }
 
   // ========== 敌人清理 ==========
@@ -328,6 +379,16 @@ export function useLightSonGame() {
       }
 
       return true;
+    });
+  }
+
+  // ========== 粒子清理 ==========
+  function cleanupParticles(): void {
+    const now = Date.now();
+
+    particles.value = particles.value.filter((particle) => {
+      const age = now - particle.birthTime;
+      return age < particle.lifetime;
     });
   }
 
@@ -365,6 +426,7 @@ export function useLightSonGame() {
     gameState,
     player,
     enemies,
+    particles,
     gameStats,
     survivalTimeFormatted,
     difficulty,

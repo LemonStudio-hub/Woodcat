@@ -38,8 +38,22 @@ export const ENEMY_CONFIG = {
     '#ff44ff', // 紫
     '#4444ff', // 蓝
   ],
-  EXPLOSION_RADIUS: 50,
-  EXPLOSION_DURATION: 500, // 毫秒
+  EXPLOSION_DISTANCE: 60, // 靠近玩家多少像素时爆炸
+  EXPLOSION_RADIUS: 80,
+  EXPLOSION_DURATION: 600, // 毫秒
+} as const;
+
+/**
+ * 粒子配置
+ */
+export const PARTICLE_CONFIG = {
+  COUNT: 20, // 每次爆炸产生的粒子数量
+  MIN_SPEED: 2,
+  MAX_SPEED: 8,
+  MIN_SIZE: 2,
+  MAX_SIZE: 6,
+  LIFETIME: 800, // 粒子存在时间（毫秒）
+  FRICTION: 0.98, // 摩擦系数
 } as const;
 
 /**
@@ -84,6 +98,19 @@ export interface Enemy {
 }
 
 /**
+ * 粒子接口
+ */
+export interface Particle {
+  id: number;
+  position: Position;
+  velocity: Velocity;
+  size: number;
+  color: string;
+  lifetime: number;
+  birthTime: number;
+}
+
+/**
  * 玩家接口
  */
 export interface Player {
@@ -108,8 +135,18 @@ export interface GameStats {
  * 输入键位映射
  */
 export const KEY_BINDINGS = {
-  UP: ['ArrowUp', 'KeyW'],
-  DOWN: ['ArrowDown', 'KeyS'],
-  LEFT: ['ArrowLeft', 'KeyA'],
-  RIGHT: ['ArrowRight', 'KeyD'],
+  UP: ['KeyW'],
+  DOWN: ['KeyS'],
+  LEFT: ['KeyA'],
+  RIGHT: ['KeyD'],
+} as const;
+
+/**
+ * 虚拟摇杆配置
+ */
+export const JOYSTICK_CONFIG = {
+  RADIUS: 50,
+  HANDLE_RADIUS: 25,
+  MAX_DISTANCE: 40,
+  DEAD_ZONE: 5,
 } as const;
