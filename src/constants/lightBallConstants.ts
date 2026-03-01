@@ -40,8 +40,8 @@ export const PARTICLE_CONFIG = {
  * 彩色小球配置
  */
 export const ENEMY_BALL_CONFIG = {
-  RADIUS: 25,
-  SPEED: 2,
+  RADIUS: 18,
+  SPEED: 3.5,
   SPAWN_INTERVAL: 2000, // 生成间隔（毫秒）
   MIN_SPAWN_INTERVAL: 800, // 最小生成间隔
   SPAWN_RATE_DECREASE: 100, // 每次减少的间隔
