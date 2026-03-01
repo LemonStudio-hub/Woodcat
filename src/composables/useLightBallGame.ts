@@ -416,6 +416,10 @@ export function useLightBallGame() {
 
   // ========== 游戏循环 ==========
   function startGameLoop(): void {
+    // 开始生成敌人和难度增加
+    startEnemySpawning();
+    startDifficultyIncrease();
+
     gameLoopTimer = window.setInterval(() => {
       updateBallPosition();
       updateEnemyBalls();
