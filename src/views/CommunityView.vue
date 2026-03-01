@@ -16,7 +16,6 @@
                 class="sidebar-link"
                 :class="{ 'sidebar-link--active': $route.path === '/community/notifications' }"
               >
-                <span class="sidebar-icon">🔔</span>
                 <span class="sidebar-text">通知</span>
                 <span v-if="unreadCount > 0" class="sidebar-badge">{{ unreadCount }}</span>
               </router-link>
@@ -25,7 +24,6 @@
                 class="sidebar-link"
                 :class="{ 'sidebar-link--active': $route.path === '/community/games' }"
               >
-                <span class="sidebar-icon">🎮</span>
                 <span class="sidebar-text">游戏大厅</span>
               </router-link>
             </nav>
@@ -143,10 +141,6 @@ onMounted(() => {
   background-color: var(--color-black);
   color: var(--color-white);
   font-weight: 600;
-}
-
-.sidebar-icon {
-  font-size: var(--font-size-lg);
 }
 
 .sidebar-text {

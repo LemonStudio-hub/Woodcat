@@ -15,7 +15,6 @@
         :class="{ 'notification-item--unread': !notification.read }"
         @click="handleNotificationClick(notification)"
       >
-        <div class="notification-icon">{{ notification.icon }}</div>
         <div class="notification-content">
           <div class="notification-header">
             <h3 class="notification-title">{{ notification.title }}</h3>
@@ -36,7 +35,6 @@
       </div>
 
       <div v-if="notifications.length === 0" class="empty-state">
-        <div class="empty-icon">📭</div>
         <p class="empty-text">暂无通知</p>
       </div>
     </div>
@@ -168,18 +166,6 @@ function handleNotificationClick(notification: Notification): void {
   background-color: var(--color-blue-100);
 }
 
-.notification-icon {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-2xl);
-  background-color: var(--color-gray-100);
-  border-radius: var(--radius-md);
-}
-
 .notification-content {
   flex: 1;
   min-width: 0;
@@ -251,11 +237,6 @@ function handleNotificationClick(notification: Notification): void {
   text-align: center;
 }
 
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: var(--spacing-4);
-}
-
 .empty-text {
   font-size: var(--font-size-base);
   color: var(--color-gray-500);
@@ -271,12 +252,6 @@ function handleNotificationClick(notification: Notification): void {
 
   .notification-item {
     padding: var(--spacing-4);
-  }
-
-  .notification-icon {
-    width: 40px;
-    height: 40px;
-    font-size: var(--font-size-xl);
   }
 
   .notification-header {
