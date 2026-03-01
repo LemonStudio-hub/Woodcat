@@ -18,33 +18,50 @@
       <div class="board-container">
         <div class="board">
           <!-- 棋盘网格 -->
+          <div class="grid-lines">
+            <div
+              v-for="i in BOARD_SIZE"
+              :key="`h-${i}`"
+              class="grid-line grid-line-horizontal"
+              :style="{ top: `${((i - 1) / (BOARD_SIZE - 1)) * 100}%` }"
+            ></div>
+            <div
+              v-for="i in BOARD_SIZE"
+              :key="`v-${i}`"
+              class="grid-line grid-line-vertical"
+              :style="{ left: `${((i - 1) / (BOARD_SIZE - 1)) * 100}%` }"
+            ></div>
+          </div>
+          
+          <!-- 星位点 -->
           <div
-            v-for="row in BOARD_SIZE"
-            :key="`row-${row}`"
-            class="board-row"
+            v-for="(starPoint, index) in starPoints"
+            :key="`star-${index}`"
+            class="star-point"
+            :style="getIntersectionStyle(starPoint.row, starPoint.col)"
+          ></div>
+          
+          <!-- 交叉点（点击区域和棋子） -->
+          <div
+            v-for="(row, rowIndex) in board"
+            :key="`row-${rowIndex}`"
           >
             <div
-              v-for="col in BOARD_SIZE"
-              :key="`cell-${row}-${col}`"
-              class="board-cell"
-              @click="handleCellClick(row - 1, col - 1)"
+              v-for="(cell, colIndex) in row"
+              :key="`cell-${rowIndex}-${colIndex}`"
+              class="intersection"
+              :style="getIntersectionStyle(rowIndex, colIndex)"
+              @click="handleCellClick(rowIndex, colIndex)"
             >
-              <!-- 棋盘星位点 -->
               <div
-                v-if="isStarPoint(row - 1, col - 1)"
-                class="star-point"
-              ></div>
-
-              <!-- 棋子 -->
-              <div
-                v-if="getStoneAt({ row: row - 1, col: col - 1 }) !== Player.EMPTY"
+                v-if="cell !== Player.EMPTY"
                 class="stone"
-                :class="{
-                  'stone--black': getStoneAt({ row: row - 1, col: col - 1 }) === Player.BLACK,
-                  'stone--white': getStoneAt({ row: row - 1, col: col - 1 }) === Player.WHITE,
-                  'stone--last': isLastMove(row - 1, col - 1),
-                  'stone--place': hasAnimation(row - 1, col - 1) === 'place',
-                  'stone--capture': hasAnimation(row - 1, col - 1) === 'capture',
+                :class="{ 
+                  'stone-black': cell === Player.BLACK, 
+                  'stone-white': cell === Player.WHITE,
+                  'stone-last': isLastMove(rowIndex, colIndex),
+                  'stone-place': hasAnimation(rowIndex, colIndex) === 'place',
+                  'stone-capture': hasAnimation(rowIndex, colIndex) === 'capture',
                 }"
               ></div>
             </div>
@@ -121,24 +138,18 @@ const {
   getStoneAt,
 } = useGoGame();
 
-/**
- * 检查是否是星位点
- */
-function isStarPoint(row: number, col: number): boolean {
-  const starPoints = [
-    { row: 3, col: 3 },
-    { row: 3, col: 9 },
-    {row: 3, col: 15 },
-    { row: 9, col: 3 },
-    { row: 9, col: 9 },
-    { row: 9, col: 15 },
-    { row: 15, col: 3 },
-    { row: 15, col: 9 },
-    { row: 15, col: 15 },
-  ];
-
-  return starPoints.some((point) => point.row === row && point.col === col);
-}
+// 星位点坐标
+const starPoints = [
+  { row: 3, col: 3 },
+  { row: 3, col: 9 },
+  { row: 3, col: 15 },
+  { row: 9, col: 3 },
+  { row: 9, col: 9 },
+  { row: 9, col: 15 },
+  { row: 15, col: 3 },
+  { row: 15, col: 9 },
+  { row: 15, col: 15 },
+];
 
 /**
  * 检查是否是最后一步
@@ -162,6 +173,19 @@ function hasAnimation(row: number, col: number): string | null {
   }
   
   return null;
+}
+
+/**
+ * 获取交叉点样式
+ */
+function getIntersectionStyle(row: number, col: number): Record<string, string> {
+  const padding = 2; // 边距百分比
+  const gridSize = BOARD_SIZE - 1;
+  return {
+    left: `${padding + (col / gridSize) * (100 - 2 * padding)}%`,
+    top: `${padding + (row / gridSize) * (100 - 2 * padding)}%`,
+    transform: 'translate(-50%, -50%)',
+  };
 }
 
 /**
@@ -298,98 +322,150 @@ onUnmounted(() => {
 }
 
 .board {
+  position: relative;
   width: 100%;
   height: 100%;
-  background-color: #DEB887;
-  border: var(--border-width-medium) solid #8B4513;
-  border-radius: var(--radius-md);
-  padding: var(--spacing-2);
-  display: flex;
-  flex-direction: column;
+  background-color: var(--color-white);
+  border: var(--border-width-medium) solid var(--color-black);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.board-row {
-  flex: 1;
-  display: flex;
-}
-
-.board-cell {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-}
-
-/* 棋盘线（使用伪元素） */
-.board-cell::before {
-  content: '';
+/* 棋盘网格 */
+.grid-lines {
   position: absolute;
-  top: 50%;
+  inset: 2%;
+  pointer-events: none;
+}
+
+.grid-line {
+  position: absolute;
+  background-color: var(--color-gray-300);
+}
+
+.grid-line-horizontal {
   left: 0;
   right: 0;
   height: 1px;
-  background-color: #000;
-  z-index: 0;
 }
 
-.board-cell::after {
-  content: '';
-  position: absolute;
-  left: 50%;
+.grid-line-vertical {
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: #000;
-  z-index: 0;
 }
 
 /* 星位点 */
 .star-point {
-  position: relative;
+  position: absolute;
   width: 6px;
   height: 6px;
-  background-color: #000;
+  background-color: var(--color-black);
   border-radius: 50%;
-  z-index: 1;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+/* 交叉点（点击区域和棋子位置） */
+.intersection {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5%;
+  height: 5%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.intersection:hover::before {
+  content: '';
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: hoverPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes hoverPulse {
+  from {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 1;
+  }
 }
 
 /* 棋子 */
 .stone {
-  position: relative;
   width: 90%;
   height: 90%;
   border-radius: 50%;
-  z-index: 2;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 20;
   transition: all var(--transition-fast);
 }
 
-.stone--black {
-  background: radial-gradient(circle at 30% 30%, #444 0%, #000 100%);
+.stone-black {
+  background: radial-gradient(circle at 30% 30%, #4a4a4a 0%, #000000 100%);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
-.stone--white {
-  background: radial-gradient(circle at 30% 30%, #fff 0%, #ccc 100%);
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+.stone-black::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 30%;
+  height: 30%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
 }
 
-.stone--last {
-  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3);
+.stone-white {
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0e0e0 100%);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(200, 200, 200, 0.5);
+  position: relative;
+}
+
+.stone-white::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* 最后一步标记 */
+.stone-last {
+  box-shadow: 
+    0 0 0 2px rgba(255, 0, 0, 0.8),
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.2);
   animation: lastMovePulse 2s ease-in-out infinite;
 }
 
-.stone--place {
+/* 动画效果 */
+.stone-place {
   animation: stonePlace 0.3s ease-out forwards;
 }
 
-.stone--capture {
+.stone-capture {
   animation: stoneCapture 0.4s ease-out forwards;
-}
-
-.board-cell:hover .stone {
-  transform: scale(1.05);
 }
 
 /* 动画关键帧 */
@@ -424,10 +500,16 @@ onUnmounted(() => {
 
 @keyframes lastMovePulse {
   0%, 100% {
-    box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      0 0 0 2px rgba(255, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(255, 0, 0, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      0 0 0 4px rgba(255, 0, 0, 0.5),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -461,10 +543,11 @@ onUnmounted(() => {
 }
 
 .current-player-indicator {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--color-gray-300);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .current-player-name {
@@ -479,14 +562,14 @@ onUnmounted(() => {
 .resign-button,
 .new-game-button {
   padding: var(--spacing-3) var(--spacing-6);
-  background-color: var(--color-black);
-  color: var(--color-white);
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   border: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .resign-button {
@@ -495,17 +578,28 @@ onUnmounted(() => {
   border: var(--border-width-thin) solid var(--color-gray-300);
 }
 
-.new-game-button:hover {
-  background-color: var(--color-gray-800);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
 .resign-button:hover {
   background-color: var(--color-gray-100);
   border-color: var(--color-black);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.new-game-button {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.new-game-button:hover {
+  background-color: var(--color-gray-800);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.resign-button:active,
+.new-game-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 游戏结束遮罩 */
@@ -535,24 +629,74 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-4);
   padding: var(--spacing-8);
-  background-color: var(--color-white);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
   border-radius: var(--radius-xl);
   text-align: center;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .game-over-icon {
   font-size: 4rem;
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes iconPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.15);
+  }
 }
 
 .game-over-title {
   font-size: var(--font-size-2xl);
   font-weight: 800;
   color: var(--color-black);
+  animation: titleSlideIn 0.4s ease-out 0.2s both;
+}
+
+@keyframes titleSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .game-over-buttons {
   display: flex;
   gap: var(--spacing-3);
+}
+
+.game-over-buttons .new-game-button {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.game-over-buttons .new-game-button:hover {
+  background-color: var(--color-gray-800);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* 响应式设计 */
@@ -576,6 +720,12 @@ onUnmounted(() => {
 
   .control-buttons {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .resign-button,
+  .new-game-button {
+    width: 100%;
   }
 }
 </style>
