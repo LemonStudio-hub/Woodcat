@@ -131,14 +131,6 @@ const routes: RouteRecordRaw[] = [
       title: '围棋 - 木头猫',
     },
   },
-  {
-    path: '/game/light-son',
-    name: 'LightSon',
-    component: () => import('@/views/LightSonView.vue'),
-    meta: {
-      title: '光之子 - 木头猫',
-    },
-  },
 ];
 
 /**

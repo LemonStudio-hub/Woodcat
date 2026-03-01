@@ -36,9 +36,6 @@ export enum VibrationType {
   DROP = 'drop',             // 下落
   CLEAR = 'clear',           // 消除
   GAME_OVER = 'game_over',   // 游戏结束
-  
-  // 光之子震动
-  EXPLOSION = 'explosion',   // 爆炸
 }
 
 /**
@@ -116,9 +113,6 @@ const VIBRATION_CONFIGS: Record<VibrationType, VibrationConfig> = {
   },
   [VibrationType.GAME_OVER]: {
     pattern: [200, 100, 200],
-  },
-  [VibrationType.EXPLOSION]: {
-    pattern: [100, 50, 100],
   },
 };
 

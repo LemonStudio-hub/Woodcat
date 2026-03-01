@@ -69,12 +69,6 @@ export const GAME_LIST: GameInfo[] = [
     description: '传统棋类，黑方先手',
     route: '/game/go',
   },
-  {
-    id: 'light-son',
-    name: '光之子',
-    description: '躲避敌人，存活下去',
-    route: '/game/light-son',
-  },
 ];
 
 /**

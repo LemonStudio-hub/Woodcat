@@ -36,9 +36,6 @@ export enum SoundType {
   DROP = 'drop',             // 下落
   CLEAR = 'clear',           // 消除
   GAME_OVER = 'game_over',   // 游戏结束
-  
-  // 光之子音效
-  EXPLOSION = 'explosion',   // 爆炸
 }
 
 /**
@@ -229,14 +226,6 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
     volume: 0.5,
     attack: 0.01,
     decay: 0.3,
-  },
-  [SoundType.EXPLOSION]: {
-    frequency: 150,
-    duration: 0.3,
-    type: 'sawtooth',
-    volume: 0.6,
-    attack: 0.01,
-    decay: 0.2,
   },
 };
 
