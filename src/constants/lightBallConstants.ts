@@ -6,7 +6,7 @@
  * 球配置
  */
 export const BALL_CONFIG = {
-  RADIUS: 15,
+  RADIUS: 20,
   SPEED: 8,
   COLOR: '#ffffff',
   GLOW_COLOR: 'rgba(255, 255, 255, 0.6)',
@@ -40,7 +40,7 @@ export const PARTICLE_CONFIG = {
  * 彩色小球配置
  */
 export const ENEMY_BALL_CONFIG = {
-  RADIUS: 15,
+  RADIUS: 25,
   SPEED: 2,
   SPAWN_INTERVAL: 3000, // 生成间隔（毫秒）
   MIN_SPAWN_INTERVAL: 1000, // 最小生成间隔

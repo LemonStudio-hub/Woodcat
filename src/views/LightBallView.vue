@@ -278,7 +278,11 @@ function getEnemyBallStyle(enemy: any) {
     width: `${enemy.radius * 2}px`,
     height: `${enemy.radius * 2}px`,
     backgroundColor: enemy.color,
-    boxShadow: `0 0 ${enemy.radius * 2}px ${enemy.color}`,
+    boxShadow: `
+      0 0 ${enemy.radius * 3}px ${enemy.color},
+      0 0 ${enemy.radius * 1.5}px rgba(255, 255, 255, 0.3),
+      inset 0 0 ${enemy.radius * 0.5}px rgba(255, 255, 255, 0.3)
+    `,
     transform: `translateZ(0) scale(${scale})`,
     opacity: opacity,
   };
@@ -536,25 +540,6 @@ onUnmounted(() => {
   will-change: transform, opacity;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.enemy-ball--exploding {
-  animation: enemyExplosion 1s ease-out forwards;
-}
-
-@keyframes enemyExplosion {
-  0% {
-    transform: translateZ(0) scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: translateZ(0) scale(2.5);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateZ(0) scale(4);
-    opacity: 0;
-  }
 }
 
 /* 游戏结束遮罩 */
