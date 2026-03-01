@@ -577,7 +577,7 @@ export function useInternationalCheckersGame() {
         selectPiece(piece);
         setTimeout(() => {
           movePiece(move);
-        }, 300);
+        }, 500);
       }
     }
   }
