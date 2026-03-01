@@ -123,6 +123,14 @@ const routes: RouteRecordRaw[] = [
       title: '扫雷 - 木头猫',
     },
   },
+  {
+    path: '/game/go',
+    name: 'Go',
+    component: () => import('@/views/GoView.vue'),
+    meta: {
+      title: '围棋 - 木头猫',
+    },
+  },
 ];
 
 /**

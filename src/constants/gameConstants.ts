@@ -63,6 +63,12 @@ export const GAME_LIST: GameInfo[] = [
     description: '经典扫雷游戏',
     route: '/game/minesweeper',
   },
+  {
+    id: 'go',
+    name: '围棋',
+    description: '传统棋类，黑方先手',
+    route: '/game/go',
+  },
 ];
 
 /**
