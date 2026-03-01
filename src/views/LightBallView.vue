@@ -603,6 +603,11 @@ onUnmounted(() => {
   min-height: 100vh;
   background: #000000;
   padding: var(--spacing-2);
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 游戏容器 */
@@ -616,6 +621,9 @@ onUnmounted(() => {
   max-height: 800px;
   transform: translateZ(0);
   backface-visibility: hidden;
+  will-change: transform;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 游戏画布 */
@@ -711,14 +719,21 @@ onUnmounted(() => {
   animation: fadeIn 0.3s ease;
   z-index: 100;
   backdrop-filter: blur(5px);
+  transform: translateZ(0);
+  will-change: opacity;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateZ(0);
   }
   to {
     opacity: 1;
+    transform: translateZ(0);
   }
 }
 
@@ -734,19 +749,24 @@ onUnmounted(() => {
   animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes bounceIn {
   0% {
-    transform: scale(0);
+    transform: translateZ(0) scale(0);
     opacity: 0;
   }
   50% {
-    transform: scale(1.1);
+    transform: translateZ(0) scale(1.1);
     opacity: 1;
   }
   100% {
-    transform: scale(1);
+    transform: translateZ(0) scale(1);
     opacity: 1;
   }
 }
@@ -754,14 +774,19 @@ onUnmounted(() => {
 .game-over-icon {
   font-size: 4rem;
   animation: iconPulse 0.6s ease-in-out infinite alternate;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes iconPulse {
   from {
-    transform: scale(1);
+    transform: translateZ(0) scale(1);
   }
   to {
-    transform: scale(1.2);
+    transform: translateZ(0) scale(1.2);
   }
 }
 
@@ -770,15 +795,20 @@ onUnmounted(() => {
   font-weight: 800;
   color: var(--color-white);
   animation: titleSlideIn 0.4s ease-out 0.2s both;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes titleSlideIn {
   from {
-    transform: translateY(-20px);
+    transform: translateZ(0) translateY(-20px);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateZ(0) translateY(0);
     opacity: 1;
   }
 }
@@ -810,7 +840,9 @@ onUnmounted(() => {
   cursor: pointer;
   transform: translateZ(0);
   backface-visibility: hidden;
-  will-change: transform;
+  will-change: transform, box-shadow, background-color;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .restart-button:hover,
@@ -877,6 +909,11 @@ onUnmounted(() => {
   inset: 0;
   z-index: 50;
   touch-action: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .joystick-base {
@@ -891,6 +928,8 @@ onUnmounted(() => {
   transition: opacity 0.2s ease;
   backface-visibility: hidden;
   will-change: transform, opacity;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .joystick-handle {
@@ -908,6 +947,8 @@ onUnmounted(() => {
   will-change: transform;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   transition: transform 0.05s ease-out;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 响应式设计 */
