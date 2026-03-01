@@ -8,7 +8,7 @@
         </router-link>
         <nav class="nav">
           <router-link to="/" class="nav-link">首页</router-link>
-          <a href="/game/random" class="nav-link" @click.prevent="openRandomGame()">游戏</a>
+          <router-link to="/community" class="nav-link">社区</router-link>
           <router-link to="/settings" class="nav-link">设置</router-link>
           <div class="user-section">
             <template v-if="user">

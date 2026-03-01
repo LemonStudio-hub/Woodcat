@@ -52,6 +52,24 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/community',
+    name: 'Community',
+    component: () => import('@/views/CommunityView.vue'),
+    meta: {
+      title: '社区 - 木头猫',
+    },
+    children: [
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/views/NotificationsView.vue'),
+        meta: {
+          title: '通知中心 - 木头猫',
+        },
+      },
+    ],
+  },
+  {
     path: '/game/rock-paper-scissors',
     name: 'RockPaperScissors',
     component: () => import('@/views/GameView.vue'),

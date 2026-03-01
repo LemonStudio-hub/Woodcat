@@ -3,6 +3,8 @@
  * 使用 localStorage 存储和加载游戏数据
  */
 
+import type { NotificationData } from '@/types/notification';
+
 /**
  * 存储键前缀
  */
@@ -537,6 +539,22 @@ class PersistenceService {
       },
       gameState: null
     });
+  }
+
+  // ========== 通知 ==========
+
+  /**
+   * 保存通知数据
+   */
+  saveNotifications(data: NotificationData): void {
+    this.save('notifications', data);
+  }
+
+  /**
+   * 加载通知数据
+   */
+  loadNotifications(): NotificationData {
+    return this.load('notifications', { notifications: [] });
   }
 }
 
