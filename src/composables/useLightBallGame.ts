@@ -166,19 +166,19 @@ export function useLightBallGame() {
     // 根据方向生成位置和速度，直线前进到相对边界
     switch (direction) {
       case Direction.UP:
-        position = { x: Math.random() * (w - 2 * r) + r, y: h + r };
+        position = { x: Math.random() * (w - 2 * r) + r, y: h - r };
         velocity = { x: 0, y: -speed };
         break;
       case Direction.DOWN:
-        position = { x: Math.random() * (w - 2 * r) + r, y: -r };
+        position = { x: Math.random() * (w - 2 * r) + r, y: r };
         velocity = { x: 0, y: speed };
         break;
       case Direction.LEFT:
-        position = { x: w + r, y: Math.random() * (h - 2 * r) + r };
+        position = { x: w - r, y: Math.random() * (h - 2 * r) + r };
         velocity = { x: -speed, y: 0 };
         break;
       case Direction.RIGHT:
-        position = { x: -r, y: Math.random() * (h - 2 * r) + r };
+        position = { x: r, y: Math.random() * (h - 2 * r) + r };
         velocity = { x: speed, y: 0 };
         break;
     }
