@@ -10,6 +10,15 @@
           :style="getBallStyle"
         ></div>
 
+        <!-- 彩色小球 -->
+        <div
+          v-for="enemy in enemyBalls"
+          :key="enemy.id"
+          class="enemy-ball"
+          :class="{ 'enemy-ball--exploding': enemy.isExploding }"
+          :style="getEnemyBallStyle(enemy)"
+        ></div>
+
         <!-- 粒子 -->
         <div
           v-for="particle in particles"
@@ -26,6 +35,7 @@
 
       <!-- 虚拟摇杆 -->
       <div
+        v-if="gameState === GameState.PLAYING"
         class="virtual-joystick"
         @touchstart="handleJoystickTouchStart"
         @touchmove="handleJoystickTouchMove"
@@ -45,6 +55,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 游戏结束遮罩 -->
+    <div v-if="gameState === GameState.GAME_OVER" class="game-over-overlay">
+      <div class="game-over-content">
+        <div class="game-over-icon">💥</div>
+        <div class="game-over-title">游戏结束</div>
+        <div class="game-over-buttons">
+          <button class="restart-button" @click="handleRestart">
+            重新开始
+          </button>
+          <button class="back-button" @click="goBack">
+            返回首页
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -60,6 +86,7 @@ import {
   BALL_CONFIG,
   GAME_CONFIG,
   JOYSTICK_CONFIG,
+  GameState,
 } from '@/constants/lightBallConstants';
 
 const router = useRouter();
@@ -69,12 +96,15 @@ const {
   ball,
   ballVelocity,
   particles,
+  enemyBalls,
   animationState,
+  gameState,
   moveBall,
   stopBall,
   startGameLoop,
   stopGameLoop,
   updateScreenSize,
+  restartGame,
 } = useLightBallGame();
 
 // 移动设备检测
@@ -224,6 +254,37 @@ const getBallStyle = computed(() => {
 });
 
 /**
+ * 彩色小球样式
+ */
+function getEnemyBallStyle(enemy: any) {
+  const now = Date.now();
+  let scale = 1;
+  let opacity = 1;
+
+  if (enemy.isExploding) {
+    const elapsed = now - (enemy.explosionStartTime || 0);
+    const progress = elapsed / 1000; // 1秒爆炸动画
+
+    if (progress < 1) {
+      // 爆炸动画：先放大后消失
+      scale = 1 + progress * 3; // 放大到4倍
+      opacity = 1 - progress; // 渐变透明
+    }
+  }
+
+  return {
+    left: `${enemy.position.x - enemy.radius}px`,
+    top: `${enemy.position.y - enemy.radius}px`,
+    width: `${enemy.radius * 2}px`,
+    height: `${enemy.radius * 2}px`,
+    backgroundColor: enemy.color,
+    boxShadow: `0 0 ${enemy.radius * 2}px ${enemy.color}`,
+    transform: `scale(${scale})`,
+    opacity: opacity,
+  };
+}
+
+/**
  * 粒子样式
  */
 function getParticleStyle(particle: any) {
@@ -317,6 +378,20 @@ function handleJoystickTouchEnd(event: TouchEvent): void {
 }
 
 /**
+ * 处理重新开始游戏
+ */
+function handleRestart(): void {
+  restartGame();
+}
+
+/**
+ * 处理返回首页
+ */
+function goBack(): void {
+  router.push('/');
+}
+
+/**
  * 更新摇杆位置
  */
 function updateJoystick(event: TouchEvent): void {
@@ -342,16 +417,6 @@ function updateJoystick(event: TouchEvent): void {
 
   // 移动球
   moveBall(dx, dy);
-}
-
-/**
- * 返回首页
- */
-function goBack(): void {
-  exitFullscreen();
-  enableScroll();
-  showNavigation();
-  router.push('/');
 }
 
 /**
@@ -459,6 +524,158 @@ onUnmounted(() => {
   transform: translateZ(0);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 彩色小球 */
+.enemy-ball {
+  position: absolute;
+  border-radius: 50%;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.enemy-ball--exploding {
+  animation: enemyExplosion 1s ease-out forwards;
+}
+
+@keyframes enemyExplosion {
+  0% {
+    transform: translateZ(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateZ(0) scale(2.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateZ(0) scale(4);
+    opacity: 0;
+  }
+}
+
+/* 游戏结束遮罩 */
+.game-over-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  animation: fadeIn 0.3s ease;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.game-over-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-8);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.game-over-icon {
+  font-size: 4rem;
+  animation: iconPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes iconPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}
+
+.game-over-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-white);
+  animation: titleSlideIn 0.4s ease-out 0.2s both;
+}
+
+@keyframes titleSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.restart-button,
+.back-button {
+  padding: var(--spacing-3) var(--spacing-6);
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.restart-button:hover,
+.back-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateZ(0) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.back-button {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.back-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 @keyframes ballPulse {

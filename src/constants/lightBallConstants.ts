@@ -37,6 +37,46 @@ export const PARTICLE_CONFIG = {
 } as const;
 
 /**
+ * 彩色小球配置
+ */
+export const ENEMY_BALL_CONFIG = {
+  RADIUS: 15,
+  SPEED: 4,
+  SPAWN_INTERVAL: 3000, // 生成间隔（毫秒）
+  MIN_SPAWN_INTERVAL: 1000, // 最小生成间隔
+  SPAWN_RATE_DECREASE: 100, // 每次减少的间隔
+  DIFFICULTY_INCREASE_INTERVAL: 10000, // 难度增加间隔（毫秒）
+  COLORS: [
+    '#FF6B6B', // 红色
+    '#4ECDC4', // 青色
+    '#FFE66D', // 黄色
+    '#95E1D3', // 浅绿
+    '#F38181', // 浅红
+    '#AA96DA', // 紫色
+    '#FCBAD3', // 粉色
+    '#A8D8EA', // 浅蓝
+  ],
+} as const;
+
+/**
+ * 游戏状态
+ */
+export enum GameState {
+  PLAYING = 'playing',
+  GAME_OVER = 'game_over',
+}
+
+/**
+ * 方向枚举
+ */
+export enum Direction {
+  UP = 'up',
+  DOWN = 'down',
+  LEFT = 'left',
+  RIGHT = 'right',
+}
+
+/**
  * 位置接口
  */
 export interface Position {
@@ -50,6 +90,20 @@ export interface Position {
 export interface Ball {
   position: Position;
   radius: number;
+}
+
+/**
+ * 彩色小球接口
+ */
+export interface EnemyBall {
+  id: number;
+  position: Position;
+  velocity: Position;
+  radius: number;
+  color: string;
+  direction: Direction;
+  isExploding: boolean;
+  explosionStartTime?: number;
 }
 
 /**
