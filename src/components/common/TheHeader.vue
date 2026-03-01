@@ -3,6 +3,7 @@
     <div class="container">
       <div class="header-content">
         <router-link to="/" class="logo">
+          <span class="logo-icon">🐱</span>
           <span class="logo-text">木头猫</span>
         </router-link>
         <nav class="nav">
