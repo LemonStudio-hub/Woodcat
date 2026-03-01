@@ -131,6 +131,14 @@ const routes: RouteRecordRaw[] = [
       title: '围棋 - 木头猫',
     },
   },
+  {
+    path: '/game/light-ball',
+    name: 'LightBall',
+    component: () => import('@/views/LightBallView.vue'),
+    meta: {
+      title: '光球 - 木头猫',
+    },
+  },
 ];
 
 /**

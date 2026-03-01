@@ -69,6 +69,12 @@ export const GAME_LIST: GameInfo[] = [
     description: '传统棋类，黑方先手',
     route: '/game/go',
   },
+  {
+    id: 'light-ball',
+    name: '光球',
+    description: '操控发光小球自由移动',
+    route: '/game/light-ball',
+  },
 ];
 
 /**
