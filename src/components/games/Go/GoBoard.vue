@@ -43,6 +43,8 @@
                   'stone--black': getStoneAt({ row: row - 1, col: col - 1 }) === Player.BLACK,
                   'stone--white': getStoneAt({ row: row - 1, col: col - 1 }) === Player.WHITE,
                   'stone--last': isLastMove(row - 1, col - 1),
+                  'stone--place': hasAnimation(row - 1, col - 1) === 'place',
+                  'stone--capture': hasAnimation(row - 1, col - 1) === 'capture',
                 }"
               ></div>
             </div>
@@ -93,6 +95,7 @@
  * 显示游戏棋盘和棋子
  */
 
+import { onMounted, onUnmounted } from 'vue';
 import { useGoGame } from '@/composables/useGoGame';
 import {
   BOARD_SIZE,
@@ -110,6 +113,8 @@ const {
   blackCaptures,
   whiteCaptures,
   statusText,
+  animations,
+  lastMove,
   placeStone,
   resign,
   startNewGame,
@@ -123,7 +128,7 @@ function isStarPoint(row: number, col: number): boolean {
   const starPoints = [
     { row: 3, col: 3 },
     { row: 3, col: 9 },
-    { row: 3, col: 15 },
+    {row: 3, col: 15 },
     { row: 9, col: 3 },
     { row: 9, col: 9 },
     { row: 9, col: 15 },
@@ -139,8 +144,24 @@ function isStarPoint(row: number, col: number): boolean {
  * 检查是否是最后一步
  */
 function isLastMove(row: number, col: number): boolean {
-  // 可以添加逻辑来标记最后一步
-  return false;
+  return lastMove.value !== null && lastMove.value.row === row && lastMove.value.col === col;
+}
+
+/**
+ * 检查是否有动画
+ */
+function hasAnimation(row: number, col: number): string | null {
+  const key = `place-${row}-${col}`;
+  const key2 = `capture-${row}-${col}`;
+  
+  if (animations.value.has(key)) {
+    return 'place';
+  }
+  if (animations.value.has(key2)) {
+    return 'capture';
+  }
+  
+  return null;
 }
 
 /**
@@ -166,6 +187,44 @@ function handleResign(): void {
 function handleNewGame(): void {
   startNewGame();
 }
+
+/**
+ * 清理过期的动画
+ */
+let animationCleanupTimer: number | null = null;
+
+function startAnimationCleanup(): void {
+  animationCleanupTimer = window.setInterval(() => {
+    const now = Date.now();
+    const expiredKeys: string[] = [];
+
+    animations.value.forEach((animation, key) => {
+      // 放置动画0.3秒，被吃动画0.4秒，给点余量1秒后清理
+      if (now - animation.timestamp > 1000) {
+        expiredKeys.push(key);
+      }
+    });
+
+    expiredKeys.forEach((key) => {
+      animations.value.delete(key);
+    });
+  }, 100);
+}
+
+function stopAnimationCleanup(): void {
+  if (animationCleanupTimer !== null) {
+    clearInterval(animationCleanupTimer);
+    animationCleanupTimer = null;
+  }
+}
+
+onMounted(() => {
+  startAnimationCleanup();
+});
+
+onUnmounted(() => {
+  stopAnimationCleanup();
+});
 </script>
 
 <style scoped>
@@ -318,10 +377,58 @@ function handleNewGame(): void {
 
 .stone--last {
   box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3);
+  animation: lastMovePulse 2s ease-in-out infinite;
+}
+
+.stone--place {
+  animation: stonePlace 0.3s ease-out forwards;
+}
+
+.stone--capture {
+  animation: stoneCapture 0.4s ease-out forwards;
 }
 
 .board-cell:hover .stone {
   transform: scale(1.05);
+}
+
+/* 动画关键帧 */
+@keyframes stonePlace {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes stoneCapture {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes lastMovePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 0, 0, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* 游戏控制 */

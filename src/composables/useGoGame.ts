@@ -58,6 +58,16 @@ export function useGoGame() {
    */
   const lastCapture = ref<Coord | null>(null);
 
+  /**
+   * 动画状态
+   */
+  const animations = ref<Map<string, { type: string; timestamp: number }>>(new Map());
+
+  /**
+   * 最后落子位置
+   */
+  const lastMove = ref<Coord | null>(null);
+
   // ========== 辅助函数 ==========
 
   /**
@@ -250,6 +260,8 @@ export function useGoGame() {
     whiteCaptures.value = 0;
     history.value = [];
     lastCapture.value = null;
+    animations.value.clear();
+    lastMove.value = null;
   }
 
   // ========== 游戏控制 ==========
@@ -271,6 +283,13 @@ export function useGoGame() {
     // 下子
     board.value[coord.row][coord.col] = player;
 
+    // 添加下子动画
+    const placeKey = `place-${coord.row}-${coord.col}`;
+    animations.value.set(placeKey, {
+      type: 'place',
+      timestamp: Date.now(),
+    });
+
     // 检查是否提子
     const opponent = player === Player.BLACK ? Player.WHITE : Player.BLACK;
     const neighbors = getNeighbors(coord);
@@ -288,6 +307,15 @@ export function useGoGame() {
     // 移除被提掉的棋子
     removeStones(captured);
 
+    // 添加提子动画
+    captured.forEach((capturedCoord) => {
+      const captureKey = `capture-${capturedCoord.row}-${capturedCoord.col}`;
+      animations.value.set(captureKey, {
+        type: 'capture',
+        timestamp: Date.now(),
+      });
+    });
+
     // 记录打劫
     if (captured.length === 1) {
       lastCapture.value = captured[0];
@@ -295,12 +323,20 @@ export function useGoGame() {
       lastCapture.value = null;
     }
 
+    // 更新最后落子位置
+    lastMove.value = coord;
+
     // 播放音效和震动
     if (captured.length > 0) {
+      // 播放提子音效
       audioService.play(SoundType.MERGE);
-      vibrationService.vibrate(VibrationType.MERGE);
+      // 增强震动反馈
+      vibrationService.vibrate(VibrationType.WIN);
+      setTimeout(() => vibrationService.vibrate(VibrationType.MERGE), 100);
     } else {
+      // 播放下子音效
       audioService.play(SoundType.PLACE_BLACK);
+      // 播放下子震动
       vibrationService.vibrate(VibrationType.MOVE);
     }
 
@@ -370,6 +406,8 @@ export function useGoGame() {
     blackCaptures,
     whiteCaptures,
     history,
+    animations,
+    lastMove,
     statusText,
     // 方法
     placeStone,
