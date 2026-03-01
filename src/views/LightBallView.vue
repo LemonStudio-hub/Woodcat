@@ -279,7 +279,7 @@ function getEnemyBallStyle(enemy: any) {
     height: `${enemy.radius * 2}px`,
     backgroundColor: enemy.color,
     boxShadow: `0 0 ${enemy.radius * 2}px ${enemy.color}`,
-    transform: `scale(${scale})`,
+    transform: `translateZ(0) scale(${scale})`,
     opacity: opacity,
   };
 }
@@ -531,6 +531,7 @@ onUnmounted(() => {
   position: absolute;
   border-radius: 50%;
   transform: translateZ(0);
+  z-index: 5;
   backface-visibility: hidden;
   will-change: transform, opacity;
   -webkit-font-smoothing: antialiased;
