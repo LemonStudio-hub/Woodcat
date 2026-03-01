@@ -7,7 +7,7 @@
  */
 export const BALL_CONFIG = {
   RADIUS: 20,
-  SPEED: 8,
+  SPEED: 5,
   COLOR: '#ffffff',
   GLOW_COLOR: 'rgba(255, 255, 255, 0.6)',
   GLOW_SIZE: 30,
@@ -42,8 +42,8 @@ export const PARTICLE_CONFIG = {
 export const ENEMY_BALL_CONFIG = {
   RADIUS: 25,
   SPEED: 2,
-  SPAWN_INTERVAL: 3000, // 生成间隔（毫秒）
-  MIN_SPAWN_INTERVAL: 1000, // 最小生成间隔
+  SPAWN_INTERVAL: 2000, // 生成间隔（毫秒）
+  MIN_SPAWN_INTERVAL: 800, // 最小生成间隔
   SPAWN_RATE_DECREASE: 100, // 每次减少的间隔
   DIFFICULTY_INCREASE_INTERVAL: 10000, // 难度增加间隔（毫秒）
   COLORS: [

@@ -115,6 +115,9 @@ const joystickActive = ref(false);
 const joystickCenter = ref({ x: 0, y: 0 });
 const joystickScreenPosition = ref({ x: 0, y: 0 });
 
+// 键盘控制状态
+const keyboardDirection = ref({ x: 0, y: 0 });
+
 // 容器引用
 const gameContainer = ref<HTMLElement | null>(null);
 const joystickContainer = ref<HTMLElement | null>(null);
@@ -248,7 +251,7 @@ const getBallStyle = computed(() => {
       0 0 ${glowSize * 0.5}px rgba(255, 255, 255, 0.4),
       inset 0 0 ${BALL_CONFIG.RADIUS}px rgba(255, 255, 255, 0.2)
     `,
-    transform: `scale(${pulseScale})`,
+    transform: `translate(-50%, -50%) translateZ(0) scale(${pulseScale})`,
     transition: isMoving ? 'none' : 'transform 0.3s ease-out',
   };
 });
@@ -396,6 +399,77 @@ function goBack(): void {
 }
 
 /**
+ * 处理键盘按下事件
+ */
+function handleKeyDown(event: KeyboardEvent): void {
+  if (gameState.value !== GameState.PLAYING) return;
+
+  const speed = JOYSTICK_CONFIG.MAX_DISTANCE;
+  switch (event.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      keyboardDirection.value.y = -speed;
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keyboardDirection.value.y = speed;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      keyboardDirection.value.x = -speed;
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keyboardDirection.value.x = speed;
+      break;
+  }
+
+  // 更新球移动
+  if (keyboardDirection.value.x !== 0 || keyboardDirection.value.y !== 0) {
+    moveBall(keyboardDirection.value.x, keyboardDirection.value.y);
+  }
+}
+
+/**
+ * 处理键盘释放事件
+ */
+function handleKeyUp(event: KeyboardEvent): void {
+  if (gameState.value !== GameState.PLAYING) return;
+
+  const speed = JOYSTICK_CONFIG.MAX_DISTANCE;
+  switch (event.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keyboardDirection.value.y = 0;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keyboardDirection.value.x = 0;
+      break;
+  }
+
+  // 如果所有键都释放了，停止球
+  if (keyboardDirection.value.x === 0 && keyboardDirection.value.y === 0) {
+    stopBall();
+  } else {
+    // 否则继续移动
+    moveBall(keyboardDirection.value.x, keyboardDirection.value.y);
+  }
+}
+
+/**
  * 更新摇杆位置
  */
 function updateJoystick(event: TouchEvent): void {
@@ -428,14 +502,14 @@ function updateJoystick(event: TouchEvent): void {
  */
 onMounted(() => {
   checkMobile();
-  
+
   // 更新屏幕尺寸
   const width = isMobile.value ? window.innerWidth : GAME_CONFIG.SCREEN_WIDTH;
   const height = isMobile.value ? window.innerHeight : GAME_CONFIG.SCREEN_HEIGHT;
   updateScreenSize(width, height);
-  
+
   startGameLoop();
-  
+
   enterFullscreen();
   disableScroll();
   hideNavigation();
@@ -444,8 +518,12 @@ onMounted(() => {
   document.addEventListener('webkitfullscreenchange', checkFullscreen);
   document.addEventListener('mozfullscreenchange', checkFullscreen);
   document.addEventListener('MSFullscreenChange', checkFullscreen);
-  
+
   window.addEventListener('resize', checkMobile);
+
+  // 键盘事件监听（桌面设备）
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
 });
 
 /**
@@ -453,14 +531,18 @@ onMounted(() => {
  */
 onUnmounted(() => {
   stopGameLoop();
-  
+
   document.removeEventListener('fullscreenchange', checkFullscreen);
   document.removeEventListener('webkitfullscreenchange', checkFullscreen);
   document.removeEventListener('mozfullscreenchange', checkFullscreen);
   document.removeEventListener('MSFullscreenChange', checkFullscreen);
-  
+
   window.removeEventListener('resize', checkMobile);
-  
+
+  // 移除键盘事件监听
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('keyup', handleKeyUp);
+
   enableScroll();
   showNavigation();
   exitFullscreen();

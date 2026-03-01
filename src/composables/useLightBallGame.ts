@@ -19,7 +19,7 @@ import {
 export function useLightBallGame() {
   // ========== 球状态 ==========
   const ball = ref<Ball>({
-    position: { x: GAME_CONFIG.SCREEN_WIDTH / 2, y: GAME_CONFIG.SCREEN_HEIGHT / 2 },
+    position: { x: 0, y: 0 }, // 将在 updateScreenSize 中初始化
     radius: BALL_CONFIG.RADIUS,
   });
 
@@ -58,10 +58,16 @@ export function useLightBallGame() {
   function updateScreenSize(width: number, height: number): void {
     screenWidth.value = width;
     screenHeight.value = height;
-    
-    // 确保球在新的边界内
-    ball.value.position.x = Math.max(ball.value.radius, Math.min(width - ball.value.radius, ball.value.position.x));
-    ball.value.position.y = Math.max(ball.value.radius, Math.min(height - ball.value.radius, ball.value.position.y));
+
+    // 如果球还没有初始化（位置为 0,0），则将其放置在屏幕中心
+    if (ball.value.position.x === 0 && ball.value.position.y === 0) {
+      ball.value.position.x = width / 2;
+      ball.value.position.y = height / 2;
+    } else {
+      // 确保球在新的边界内
+      ball.value.position.x = Math.max(ball.value.radius, Math.min(width - ball.value.radius, ball.value.position.x));
+      ball.value.position.y = Math.max(ball.value.radius, Math.min(height - ball.value.radius, ball.value.position.y));
+    }
   }
 
   // 动画状态
