@@ -271,93 +271,44 @@ export function useGomokuGame() {
    * AI下棋
    */
   function aiMove(): void {
-    console.log('=== aiMove START ===', {
-      gameState: gameState.value,
-      currentPlayer: currentPlayer.value,
-      aiPlayer: aiPlayer.value,
-      gameMode: gameMode.value,
-      isAIThinking: isAIThinking.value,
-      isAIturn: currentPlayer.value === aiPlayer.value
-    });
-
     if (gameState.value !== GameState.PLAYING) {
-      console.log('aiMove FAILED: game not playing, gameState =', gameState.value);
       return;
     }
 
     if (currentPlayer.value !== aiPlayer.value) {
-      console.log('aiMove FAILED: not AI turn', {
-        currentPlayer: currentPlayer.value,
-        aiPlayer: aiPlayer.value
-      });
       return;
     }
 
     isAIThinking.value = true;
-    console.log('aiMove: set isAIThinking = true');
 
     // 延迟一下，让用户看到AI在思考
     setTimeout(() => {
-      console.log('aiMove: executing getAIMove');
-
       // 再次验证游戏状态
       if (gameState.value !== GameState.PLAYING || currentPlayer.value !== aiPlayer.value) {
-        console.log('aiMove: game state changed, aborting');
         isAIThinking.value = false;
         return;
       }
 
       const move = getAIMove();
 
-      console.log('aiMove: getAIMove returned', move);
-
-      if (move) {
-        // 再次验证位置是否为空
-        if (board.value[move.row][move.col] === Player.EMPTY) {
-          console.log('aiMove: resetting isAIThinking and calling placePiece', move);
-          isAIThinking.value = false;
-          // AI落子，传递 isAIMove = true
-          const result = placePiece(move.row, move.col, true);
-          console.log('aiMove: placePiece returned', result);
-        } else {
-          console.log('aiMove: position is now occupied, trying to find another move');
-          // 尝试找一个空位
-          let foundEmpty = false;
-          for (let r = 0; r < BOARD_SIZE && !foundEmpty; r++) {
-            for (let c = 0; c < BOARD_SIZE && !foundEmpty; c++) {
-              if (board.value[r][c] === Player.EMPTY) {
-                console.log('aiMove: found empty position', { row: r, col: c });
-                isAIThinking.value = false;
-                placePiece(r, c, true);
-                foundEmpty = true;
-              }
-            }
-          }
-          if (!foundEmpty) {
-            console.log('aiMove: no empty position available, game should be draw');
-            isAIThinking.value = false;
-          }
-        }
+      if (move && board.value[move.row][move.col] === Player.EMPTY) {
+        // AI落子，传递 isAIMove = true
+        placePiece(move.row, move.col, true);
       } else {
-        console.log('aiMove: no move found, trying to find any empty position');
         // 尝试找一个空位
         let foundEmpty = false;
         for (let r = 0; r < BOARD_SIZE && !foundEmpty; r++) {
           for (let c = 0; c < BOARD_SIZE && !foundEmpty; c++) {
             if (board.value[r][c] === Player.EMPTY) {
-              console.log('aiMove: found empty position', { row: r, col: c });
-              isAIThinking.value = false;
               placePiece(r, c, true);
               foundEmpty = true;
             }
           }
         }
         if (!foundEmpty) {
-          console.log('aiMove: no empty position available, game should be draw');
           isAIThinking.value = false;
         }
       }
-      console.log('=== aiMove END ===');
     }, 500);
   }
 
@@ -434,22 +385,9 @@ export function useGomokuGame() {
    * 放置棋子
    */
   function placePiece(row: number, col: number, isAIMove: boolean = false): boolean {
-    console.log('=== placePiece START ===', {
-      row,
-      col,
-      currentPlayer: currentPlayer.value,
-      gameMode: gameMode.value,
-      aiPlayer: aiPlayer.value,
-      isAIMove,
-      isAIThinking: isAIThinking.value,
-      gameState: gameState.value
-    });
-
     // 检查游戏是否结束
     if (gameState.value !== GameState.PLAYING) {
-      console.log('placePiece FAILED: game not playing, gameState =', gameState.value);
-      // 如果是 AI 落子失败，重置思考状态
-      if (isAIMove && isAIThinking.value) {
+      if (isAIMove) {
         isAIThinking.value = false;
       }
       return false;
@@ -457,9 +395,7 @@ export function useGomokuGame() {
 
     // 检查位置是否为空
     if (board.value[row][col] !== Player.EMPTY) {
-      console.log('placePiece FAILED: position not empty, value =', board.value[row][col]);
-      // 如果是 AI 落子失败，重置思考状态
-      if (isAIMove && isAIThinking.value) {
+      if (isAIMove) {
         isAIThinking.value = false;
       }
       return false;
@@ -467,11 +403,8 @@ export function useGomokuGame() {
 
     // 如果AI正在思考，禁止玩家落子（但允许AI落子）
     if (isAIThinking.value && !isAIMove) {
-      console.log('placePiece FAILED: AI is thinking, player cannot move');
       return false;
     }
-
-    console.log('placePiece SUCCESS: placing piece at', row, col);
 
     // 放置棋子
     board.value[row][col] = currentPlayer.value;
@@ -501,8 +434,6 @@ export function useGomokuGame() {
 
       audioService.play(SoundType.WIN);
       vibrationService.vibrateCustom([100, 50, 100, 50, 150]);
-      console.log('placePiece: player won');
-      // 确保游戏结束时重置思考状态
       isAIThinking.value = false;
       return true;
     }
@@ -512,8 +443,6 @@ export function useGomokuGame() {
       gameState.value = GameState.DRAW;
       audioService.play(SoundType.DRAW);
       vibrationService.vibrateCustom([50, 30, 50, 30, 50]);
-      console.log('placePiece: draw');
-      // 确保游戏结束时重置思考状态
       isAIThinking.value = false;
       return true;
     }
@@ -522,22 +451,13 @@ export function useGomokuGame() {
     currentPlayer.value =
       currentPlayer.value === Player.BLACK ? Player.WHITE : Player.BLACK;
 
-    console.log('placePiece: switched player', {
-      newCurrentPlayer: currentPlayer.value,
-      aiPlayer: aiPlayer.value,
-      isAIturn: currentPlayer.value === aiPlayer.value
-    });
-
     // 如果是人机模式且轮到 AI，触发AI下棋
     if (gameMode.value === GameMode.PVE && currentPlayer.value === aiPlayer.value) {
-      console.log('placePiece: triggering AI move');
-      // 使用 nextTick 确保视图更新后再触发 AI 落子
       setTimeout(() => {
         aiMove();
       }, 50);
     }
 
-    console.log('=== placePiece END ===');
     return true;
   }
   
@@ -545,58 +465,36 @@ export function useGomokuGame() {
    * 开始新游戏
    */
   function startNewGame(): void {
-    console.log('=== startNewGame START ===', { gameMode: gameMode.value });
-
     initBoard();
     gameState.value = GameState.PLAYING;
     isAIThinking.value = false;
-    winningLine.value = []; // 清空获胜连线
+    winningLine.value = [];
 
     // 黑棋始终先手
     currentPlayer.value = Player.BLACK;
-
-    console.log('startNewGame: set currentPlayer = BLACK');
 
     // 如果是人机模式，随机分配棋色
     if (gameMode.value === GameMode.PVE) {
       const aiIsBlack = Math.random() < 0.5;
 
-      console.log('startNewGame: assigning colors', { aiIsBlack });
-
       if (aiIsBlack) {
         // AI 是黑棋（先手），用户是白棋
         aiPlayer.value = Player.BLACK;
-        console.log('startNewGame: AI is BLACK (first), player is WHITE');
 
-        // 使用更长的延迟确保状态稳定
+        // 延迟触发 AI 第一步
         setTimeout(() => {
-          console.log('startNewGame: triggering AI first move');
-          // 再次验证游戏状态
-          if (gameState.value === GameState.PLAYING &&
-              currentPlayer.value === aiPlayer.value &&
-              !isAIThinking.value) {
+          if (gameState.value === GameState.PLAYING && !isAIThinking.value) {
             aiMove();
-          } else {
-            console.log('startNewGame: game state changed, skipping AI move');
           }
         }, 500);
       } else {
         // 用户是黑棋（先手），AI 是白棋
         aiPlayer.value = Player.WHITE;
-        console.log('startNewGame: player is BLACK (first), AI is WHITE');
       }
     } else {
       // 双人对战模式
       aiPlayer.value = null;
-      console.log('startNewGame: PvP mode, aiPlayer = null');
     }
-
-    console.log('startNewGame completed', {
-      currentPlayer: currentPlayer.value,
-      aiPlayer: aiPlayer.value,
-      gameMode: gameMode.value
-    });
-    console.log('=== startNewGame END ===');
   }
   
   /**
