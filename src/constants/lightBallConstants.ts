@@ -41,7 +41,7 @@ export const PARTICLE_CONFIG = {
  */
 export const ENEMY_BALL_CONFIG = {
   RADIUS: 15,
-  SPEED: 4,
+  SPEED: 2,
   SPAWN_INTERVAL: 3000, // 生成间隔（毫秒）
   MIN_SPAWN_INTERVAL: 1000, // 最小生成间隔
   SPAWN_RATE_DECREASE: 100, // 每次减少的间隔
