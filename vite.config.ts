@@ -2,10 +2,6 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 
-/**
- * Vite 配置文件
- * 用于构建和开发服务器配置
- */
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -20,5 +16,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+  },
+  // 在生产环境中使用 Workers URL
+  define: {
+    __API_BASE_URL__: JSON.stringify('https://woodcat-production.lemonhub.workers.dev'),
   },
 });

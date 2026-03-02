@@ -3,7 +3,7 @@
  * 统一处理 API 请求、CSRF token 和错误处理
  */
 
-const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8787';
+const API_BASE_URL = 'https://woodcat-production.lemonhub.workers.dev';
 const CSRF_HEADER_NAME = 'X-CSRF-Token';
 
 class APIService {
