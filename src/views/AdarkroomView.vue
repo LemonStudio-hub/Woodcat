@@ -1,18 +1,8 @@
 <template>
   <div class="adarkroom-view">
-    <div class="adarkroom-header">
-      <h2 class="adarkroom-title">A Dark Room</h2>
-      <p class="adarkroom-subtitle">极简主义文字冒险游戏</p>
-      <p class="adarkroom-attribution">
-        原作者: Michael Townsend & doublespeakgames
-        <a href="https://github.com/doublespeakgames/adarkroom" target="_blank" rel="noopener noreferrer">
-          GitHub
-        </a>
-      </p>
-    </div>
-
     <div class="adarkroom-container">
       <iframe
+        ref="iframeRef"
         src="/adarkroom/index.html"
         class="adarkroom-iframe"
         title="A Dark Room Game"
@@ -21,6 +11,15 @@
         sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
       ></iframe>
     </div>
+    
+    <button 
+      v-if="!isFullscreen" 
+      @click="enterFullscreen" 
+      class="fullscreen-btn"
+      title="全屏体验"
+    >
+      ⛶
+    </button>
   </div>
 </template>
 
@@ -33,6 +32,111 @@
  * 本游戏由 doublespeakgames 开发，遵循 Mozilla Public License 2.0
  * 项目地址: https://github.com/doublespeakgames/adarkroom
  */
+
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const iframeRef = ref<HTMLIFrameElement>();
+const isFullscreen = ref(false);
+let headerElement: HTMLElement | null = null;
+let footerElement: HTMLElement | null = null;
+
+/**
+ * 进入全屏模式
+ */
+function enterFullscreen(): void {
+  if (iframeRef.value) {
+    iframeRef.value.requestFullscreen().catch(err => {
+      console.error('全屏请求失败:', err);
+    });
+  }
+}
+
+/**
+ * 退出全屏模式
+ */
+function exitFullscreen(): void {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+}
+
+/**
+ * 监听全屏变化
+ */
+function handleFullscreenChange(): void {
+  isFullscreen.value = !!document.fullscreenElement;
+  
+  if (isFullscreen.value) {
+    hideNavigation();
+  } else {
+    showNavigation();
+  }
+}
+
+/**
+ * 隐藏导航栏和页脚
+ */
+function hideNavigation(): void {
+  headerElement = document.querySelector('header');
+  footerElement = document.querySelector('footer');
+  
+  if (headerElement) {
+    headerElement.style.display = 'none';
+  }
+  if (footerElement) {
+    footerElement.style.display = 'none';
+  }
+  
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * 显示导航栏和页脚
+ */
+function showNavigation(): void {
+  if (headerElement) {
+    headerElement.style.display = '';
+  }
+  if (footerElement) {
+    footerElement.style.display = '';
+  }
+  
+  document.body.style.overflow = '';
+}
+
+/**
+ * 按 ESC 键退出全屏
+ */
+function handleKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && isFullscreen.value) {
+    exitFullscreen();
+  }
+}
+
+onMounted(() => {
+  // 自动进入全屏
+  setTimeout(() => {
+    enterFullscreen();
+  }, 500);
+  
+  // 监听全屏变化
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  
+  // 监听键盘事件
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  // 恢复导航栏显示
+  showNavigation();
+  
+  // 退出全屏
+  exitFullscreen();
+  
+  // 移除事件监听
+  document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  document.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <style scoped>
@@ -41,81 +145,58 @@
  */
 
 .adarkroom-view {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-white);
-  border: var(--border-width-thin) solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.adarkroom-header {
-  padding: var(--spacing-6);
-  border-bottom: var(--border-width-thin) solid var(--color-gray-200);
-}
-
-.adarkroom-title {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-black);
-  margin: 0 0 var(--spacing-2) 0;
-}
-
-.adarkroom-subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
-  margin: 0 0 var(--spacing-3) 0;
-}
-
-.adarkroom-attribution {
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
-  margin: 0;
-}
-
-.adarkroom-attribution a {
-  color: var(--color-gray-600);
-  text-decoration: none;
-}
-
-.adarkroom-attribution a:hover {
-  text-decoration: underline;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #000;
+  z-index: 9999;
 }
 
 .adarkroom-container {
-  flex: 1;
-  background-color: #000;
-  min-height: 600px;
+  width: 100%;
+  height: 100%;
 }
 
 .adarkroom-iframe {
   width: 100%;
   height: 100%;
-  min-height: 600px;
   border: none;
   display: block;
 }
 
-/* 响应式设计 */
-@media (max-width: 640px) {
-  .adarkroom-header {
-    padding: var(--spacing-4);
-  }
+.fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .adarkroom-title {
-    font-size: var(--font-size-lg);
-  }
+.fullscreen-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
 
-  .adarkroom-subtitle {
-    font-size: var(--font-size-xs);
-  }
-
-  .adarkroom-container {
-    min-height: 500px;
-  }
-
-  .adarkroom-iframe {
-    min-height: 500px;
-  }
+/* 全屏时隐藏按钮 */
+:deep(body:fullscreen) .fullscreen-btn,
+:deep(body:-webkit-full-screen) .fullscreen-btn,
+:deep(body:-moz-full-screen) .fullscreen-btn,
+:deep(body:-ms-fullscreen) .fullscreen-btn {
+  display: none;
 }
 </style>
