@@ -1,15 +1,24 @@
-# A Dark Room 许可证声明
+# A Dark Room (中文修改版) 许可证声明
 
 ## 项目信息
 
-- **项目名称**: A Dark Room
+- **项目名称**: A Dark Room (中文修改版)
 - **原作者**: Michael Townsend & doublespeakgames
-- **项目地址**: https://github.com/doublespeakgames/adarkroom
-- **官方网站**: http://adarkroom.doublespeakgames.com
+- **修改者**: WarrenZ
+- **原始项目地址**: https://github.com/doublespeakgames/adarkroom
+- **修改版项目地址**: https://gitee.com/unluckly/adarkroom_wz
+- **官方网站**: http://warrenz.gitee.io/adarkroom_wz
+
+## 项目特点
+
+本版本基于原始 A Dark Room 项目进行了以下修改：
+- 默认语言设置为中文（简体）
+- 增加了对移动设备的支持
+- 优化了移动端游戏体验
 
 ## 许可证
 
-本项目中的 A Dark Room 游戏遵循 **Mozilla Public License 2.0 (MPL-2.0)** 许可证。
+本项目中的 A Dark Room 遵循 **Mozilla Public License 2.0 (MPL-2.0)** 许可证。
 
 ### MPL-2.0 许可证摘要
 
@@ -339,7 +348,7 @@ courts of a jurisdiction where the defendant maintains its principal
 place of business and such litigation shall be governed by laws of that
 jurisdiction, without reference to its conflict-of-law provisions.
 Nothing in this Section shall prevent a party's ability to bring
-cross-claims or counter-claims.
+cross-claims and counter-claims.
 
 9. Miscellaneous
 ----------------
@@ -408,4 +417,6 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 Woodcat 项目仅为 A Dark Room 提供展示平台，不对游戏内容、功能或性能负责。游戏的版权、商标和其他知识产权归原作者所有。
 
-如有任何问题或需要支持，请联系原作者：https://github.com/doublespeakgames/adarkroom
+如有任何问题或需要支持，请联系原作者：
+- 原始项目: https://github.com/doublespeakgames/adarkroom
+- 修改版项目: https://gitee.com/unluckly/adarkroom_wz

@@ -137,19 +137,6 @@
 	padding-top:10%;
 }
 
-.outroContainer {
-	padding-top:10%;
-	width: 800px;
-	margin: 0 auto;
-}
-
-.outro {
-	font-size: 1.5rem;
-	color: #FFF;
-	opacity: 0;
-	margin-bottom: 40px;
-}
-
 .endGame {
 	font-size:48px;
 	color:#FFFFFF;
@@ -164,11 +151,4 @@
 
 .endGameOption:hover {
 	text-decoration: underline;
-}
-
-#wait-btn {
-	border-color: #fff;
-	color: #fff;
-	margin: 0 auto;
-	opacity: 0;
 }

@@ -826,18 +826,14 @@ var Room = {
 		}
 		for (var k in $SM.get('stores')) {
 
-			if (k.indexOf('blueprint') > 0) {
-				// don't show blueprints
-				continue;
+			var type = null;
+			if (Room.Craftables[k]) {
+				type = Room.Craftables[k].type;
+			} else if (Room.TradeGoods[k]) {
+				type = Room.TradeGoods[k].type;
+			} else if (Room.MiscItems[k]) {
+				type = Room.MiscItems[k].type;
 			}
-
-			const good =  
-        Room.Craftables[k] ||
-        Room.TradeGoods[k] ||
-        Room.TradeGoods[k] ||
-        Room.MiscItems[k] ||
-        Fabricator.Craftables[k];
-      const type = good ? good.type : null;
 
 			var location;
 			switch (type) {
@@ -858,7 +854,7 @@ var Room = {
 					break;
 			}
 
-			var id = "row_" + k.replace(/ /g, '-');
+			var id = "row_" + k.replace(' ', '-');
 			var row = $('div#' + id, location);
 			var num = $SM.get('stores["' + k + '"]');
 
@@ -1143,7 +1139,7 @@ var Room = {
 				if (Room.craftUnlocked(k)) {
 					var loc = Room.needsWorkshop(craftable.type) ? craftSection : buildSection;
 					craftable.button = new Button.Button({
-						id: 'build_' + k.replace(/ /g, '-'),
+						id: 'build_' + k,
 						cost: craftable.cost(),
 						text: _(k),
 						click: Room.build,

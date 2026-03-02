@@ -7,8 +7,7 @@
   "author": "Michael Townsend <michael@doublespeakgames.com>",
   "license": "MPL-2.0",
   "scripts": {
-    "start": "node dev-server.js",
-    "update_pot": "pybabel extract -F lang/babel.cfg -c \"TRANSLATORS\" script -o lang/adarkroom.pot"
+    "start": "node dev-server.js"
   },
   "dependencies": {
     "express": "^4.17.1"

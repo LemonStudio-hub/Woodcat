@@ -11,14 +11,14 @@ Events.Marketing = [{
   scenes: {
     'start': {
       text: [
-        _('a strange thrumming, pounding and crashing. visions of people and places, of a huge machine and twisting curves.'),
-        _('inviting. it would be so easy to give in, completely.')
+        _('令人毛骨悚然的砰砰声和撞击声从四面八方传来。眼前浮现出人类和地点、巨型机械和扭曲线条的幻像。'),
+        _('来吧，屈服吧，你们这些不知天高地厚的人类。彻底臣服于我吧！')
       ],
       notification: _('a strange thrumming, pounding and crashing. and then gone.'),
       blink: true,
       buttons: {
         'give in': {
-          text: _('give in'),
+          text: _('屈服'),
           onClick: () => {
             $SM.set('marketing.penrose', true);
           },

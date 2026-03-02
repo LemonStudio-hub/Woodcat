@@ -29,8 +29,16 @@
  * 通过 iframe 隔离加载第三方游戏
  * 
  * 版权声明：
- * 本游戏由 doublespeakgames 开发，遵循 Mozilla Public License 2.0
- * 项目地址: https://github.com/doublespeakgames/adarkroom
+ * 本游戏由 Michael Townsend & doublespeakgames 开发
+ * 中文修改版由 WarrenZ 修改
+ * 遵循 Mozilla Public License 2.0
+ * 原始项目地址: https://github.com/doublespeakgames/adarkroom
+ * 修改版项目地址: https://gitee.com/unluckly/adarkroom_wz
+ * 
+ * 修改内容：
+ * - 默认语言设置为中文（简体）
+ * - 增加了对移动设备的支持
+ * - 优化了移动端游戏体验
  */
 
 import { ref, onMounted, onUnmounted } from 'vue';
