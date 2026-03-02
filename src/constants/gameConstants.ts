@@ -75,6 +75,12 @@ export const GAME_LIST: GameInfo[] = [
     description: '操控发光小球自由移动',
     route: '/game/light-ball',
   },
+  {
+    id: 'adarkroom',
+    name: 'A Dark Room',
+    description: '极简主义文字冒险游戏',
+    route: '/game/adarkroom',
+  },
 ];
 
 /**
