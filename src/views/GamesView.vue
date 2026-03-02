@@ -113,6 +113,13 @@ const games: Game[] = [
     icon: '🔴',
     path: '/game/light-ball',
   },
+  {
+    id: 'adarkroom',
+    name: 'A Dark Room',
+    description: '极简主义文字冒险',
+    icon: '🏚️',
+    path: '/game/adarkroom',
+  },
 ];
 </script>
 

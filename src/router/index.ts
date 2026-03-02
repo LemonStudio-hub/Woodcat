@@ -166,6 +166,14 @@ const routes: RouteRecordRaw[] = [
       title: '光球 - 木头猫',
     },
   },
+  {
+    path: '/game/adarkroom',
+    name: 'Adarkroom',
+    component: () => import('@/views/AdarkroomView.vue'),
+    meta: {
+      title: 'A Dark Room - 木头猫',
+    },
+  },
 ];
 
 /**
