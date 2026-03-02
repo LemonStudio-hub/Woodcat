@@ -542,7 +542,7 @@ export function useLightBallGame() {
 
     // 每秒更新存活时间
     animationTimer = window.setInterval(() => {
-      if (gameStartTime) {
+      if (gameStartTime && gameState.value === GameState.PLAYING) {
         survivalTime.value = Math.floor((Date.now() - gameStartTime) / 1000);
       }
     }, 1000);
