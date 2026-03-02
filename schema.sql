@@ -42,3 +42,8 @@ CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_login_history_user_id ON login_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_login_history_created_at ON login_history(login_at);
+-- 额外的索引（提升查询性能）
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
