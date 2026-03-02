@@ -67,6 +67,14 @@ const routes: RouteRecordRaw[] = [
           title: '通知中心 - 木头猫',
         },
       },
+      {
+        path: 'games',
+        name: 'Games',
+        component: () => import('@/views/GamesView.vue'),
+        meta: {
+          title: '游戏大厅 - 木头猫',
+        },
+      },
     ],
   },
   {
