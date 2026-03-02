@@ -58,6 +58,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '社区 - 木头猫',
     },
+    redirect: '/community/notifications',
     children: [
       {
         path: 'notifications',
