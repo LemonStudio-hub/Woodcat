@@ -4,9 +4,9 @@
  */
 
 import { Hono } from 'hono';
-import { checkRateLimit, generateRateLimitKey, type RateLimitConfig } from '../utils/rateLimiter';
-import { checkLoginAttempt, recordLoginFailure, recordLoginSuccess } from '../utils/loginLimiter';
 import { verifyTurnstile } from '../utils/turnstile';
+import { checkLoginAttempt, recordLoginFailure, recordLoginSuccess } from '../utils/loginLimiter';
+import { checkRateLimit, generateRateLimitKey, type RateLimitConfig } from '../utils/rateLimiter';
 import { hashPassword, verifyPassword, generateToken } from '../utils/crypto';
 import { getUserByEmail, getUserByUsername, createUser, createSession, recordLoginHistory } from '../utils/db';
 
@@ -29,17 +29,17 @@ authRoutes.post('/register', async (c) => {
     // 验证 Turnstile
     const turnstileResult = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, turnstileToken);
     if (!turnstileResult.success) {
-    \/\/ 请求限流检查（注册：每分钟 5 次）
-    const ip = c.req.header(\CF-Connecting-IP\) || 'unknown';
-    const rateLimitKey = generateRateLimitKey(ip, 'register');
+      return c.json({ error: '验证失败，请重试' }, 400);
+    }
+
+    // 请求限流检查（注册：每分钟 5 次）
+    const clientIp = c.req.header('CF-Connecting-IP') || 'unknown';
+    const rateLimitKey = generateRateLimitKey(clientIp, 'register');
     const rateLimitConfig: RateLimitConfig = { maxRequests: 5, windowMs: 60000 };
 
     const rateLimitResult = await checkRateLimit(c.env.SESSIONS, rateLimitKey, rateLimitConfig);
     if (!rateLimitResult.success) {
       return c.json({ error: '请求过于频繁，请稍后再试' }, 429);
-    }
-
-      return c.json({ error: '验证失败，请重试' }, 400);
     }
 
     // 验证输入
@@ -48,7 +48,7 @@ authRoutes.post('/register', async (c) => {
     }
 
     if (password.length < 8) {
-      return c.json({ error: "密码至少需要 8 个字符" }, 400);
+      return c.json({ error: '密码至少需要 8 个字符' }, 400);
     }
 
     // 验证密码复杂度
@@ -56,11 +56,9 @@ authRoutes.post('/register', async (c) => {
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
     const hasSpecial = /[^A-Za-z0-9]/.test(password);
-
+    
     if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
-      return c.json({ error: "密码必须包含大小写字母、数字和特殊字符" }, 400);
-    }
-      return c.json({ error: '密码至少需要 6 个字符' }, 400);
+      return c.json({ error: '密码必须包含大小写字母、数字和特殊字符' }, 400);
     }
 
     // 验证邮箱格式
@@ -132,28 +130,15 @@ authRoutes.post('/register', async (c) => {
   }
 });
 
-    \/\/ 请求限流检查（登录：每分钟 3 次）
-    const ip = c.req.header(\CF-Connecting-IP\) || 'unknown';
-    const rateLimitKey = generateRateLimitKey(ip, 'login');
-    const rateLimitConfig: RateLimitConfig = { maxRequests: 3, windowMs: 60000 };
-
-    const rateLimitResult = await checkRateLimit(c.env.SESSIONS, rateLimitKey, rateLimitConfig);
-    if (!rateLimitResult.success) {
-      return c.json({ error: '请求过于频繁，请稍后再试' }, 429);
-    }
-
 /**
  * 登录
  */
 authRoutes.post('/login', async (c) => {
   try {
+
     const { email, password, turnstileToken } = await c.req.json();
 
-    // 验证 Turnstile
-    const turnstileResult = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, turnstileToken);
-    if (!turnstileResult.success) {
     // 登录失败锁定检查
-    const ip = c.req.header('CF-Connecting-IP') || 'unknown';
     const loginCheck = await checkLoginAttempt(c.env.SESSIONS, email);
 
     if (!loginCheck.allowed) {
@@ -163,7 +148,20 @@ authRoutes.post('/login', async (c) => {
       }
     }
 
+    // 验证 Turnstile
+    const turnstileResult = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, turnstileToken);
+    if (!turnstileResult.success) {
       return c.json({ error: '验证失败，请重试' }, 400);
+    }
+
+    // 请求限流检查（登录：每分钟 3 次）
+    const clientIp = c.req.header('CF-Connecting-IP') || 'unknown';
+    const rateLimitKey = generateRateLimitKey(clientIp, 'login');
+    const rateLimitConfig: RateLimitConfig = { maxRequests: 3, windowMs: 60000 };
+
+    const rateLimitResult = await checkRateLimit(c.env.SESSIONS, rateLimitKey, rateLimitConfig);
+    if (!rateLimitResult.success) {
+      return c.json({ error: '请求过于频繁，请稍后再试' }, 429);
     }
 
     // 验证输入
@@ -186,12 +184,6 @@ authRoutes.post('/login', async (c) => {
     if (!isValidPassword) {
       // 记录登录失败
       await recordLoginFailure(c.env.SESSIONS, email);
-      return c.json({ error: '邮箱或密码错误' }, 401);
-    }
-
-    // 登录成功，清除失败记录
-    await recordLoginSuccess(c.env.SESSIONS, email);
-    if (!isValidPassword) {
       // 记录失败的登录尝试
       const ip = c.req.header('CF-Connecting-IP') || 'unknown';
       const userAgent = c.req.header('User-Agent') || 'unknown';
@@ -202,6 +194,9 @@ authRoutes.post('/login', async (c) => {
     // 获取客户端信息
     const ip = c.req.header('CF-Connecting-IP') || 'unknown';
     const userAgent = c.req.header('User-Agent') || 'unknown';
+
+    // 登录成功，清除失败记录
+    await recordLoginSuccess(c.env.SESSIONS, email);
 
     // 更新最后登录信息
     await c.env.DB.prepare(`
