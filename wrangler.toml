@@ -1,0 +1,49 @@
+name = "woodcat"
+main = "src/api/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "DB"
+database_name = "woodcat_db"
+database_id = "c3b6150d-2b45-4acc-8d62-9a6c852487c3"
+
+# KV 存储绑定（用于会话缓存）
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "709a9047ffbd453390a809d9523f88d1"
+
+# 生产环境配置
+[env.production]
+[env.production.vars]
+ENVIRONMENT = "production"
+JWT_SECRET = "SmKul4YPpKUP8VjMElDDBYvIpPVOS1nIil1OCx5QkLA="
+TURNSTILE_SECRET_KEY = "0x4AAAAAACjUFXJecLL5O-Q2"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "woodcat_db"
+database_id = "c3b6150d-2b45-4acc-8d62-9a6c852487c3"
+
+[[env.production.kv_namespaces]]
+binding = "SESSIONS"
+id = "709a9047ffbd453390a809d9523f88d1"
+
+# 开发环境配置
+[env.development]
+[env.development.vars]
+ENVIRONMENT = "development"
+JWT_SECRET = "dev-jwt-secret-change-in-production"
+TURNSTILE_SECRET_KEY = "dev-turnstile-secret-key"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "woodcat_db"
+database_id = "c3b6150d-2b45-4acc-8d62-9a6c852487c3"
+
+[[env.development.kv_namespaces]]
+binding = "SESSIONS"
+id = "709a9047ffbd453390a809d9523f88d1"
