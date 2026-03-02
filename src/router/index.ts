@@ -71,7 +71,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'games',
         name: 'Games',
-        component: () => import('@/views/GamesView.vue'),
+        redirect: '/',
         meta: {
           title: '游戏大厅 - 木头猫',
         },
