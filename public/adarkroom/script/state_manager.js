@@ -79,16 +79,11 @@ var StateManager = {
 		//make sure the value isn't over the engine maximum
 		if(typeof value == 'number' && value > $SM.MAX_STORE) value = $SM.MAX_STORE;
 
-		try{
-			eval('('+fullPath+') = value');
-		} catch (e) {
-			//parent doesn't exist, so make parent
-			$SM.createState(stateName, value);
-		}
+		$SM.safeSet(fullPath, value);
 
 		//stores values can not be negative
 		if(stateName.indexOf('stores') === 0 && $SM.get(stateName, true) < 0) {
-			eval('('+fullPath+') = 0');
+			$SM.safeSet(fullPath, 0);
 			Engine.log('WARNING: state:' + stateName + ' can not be a negative value. Set to 0 instead.');
 		}
 
@@ -158,15 +153,8 @@ var StateManager = {
 
 	//return state, undefined or 0
 	get: function(stateName, requestZero) {
-		var whichState = null;
 		var fullPath = $SM.buildPath(stateName);
-
-		//catch errors if parent of state doesn't exist
-		try{
-			eval('whichState = ('+fullPath+')');
-		} catch (e) {
-			whichState = undefined;
-		}
+		var whichState = $SM.safeGet(fullPath);
 
 		//prevents repeated if undefined, null, false or {}, then x = 0 situations
 		if((!whichState || whichState == {}) && requestZero) return 0;
@@ -177,14 +165,13 @@ var StateManager = {
 	//since set does not fail, we know state exists and can simply return the object
 	setget: function(stateName, value, noEvent){
 		$SM.set(stateName, value, noEvent);
-		return eval('('+$SM.buildPath(stateName)+')');
+		return $SM.safeGet($SM.buildPath(stateName));
 	},
 
 	remove: function(stateName, noEvent) {
 		var whichState = $SM.buildPath(stateName);
-		try{
-			eval('(delete '+whichState+')');
-		} catch (e) {
+		var deleted = $SM.safeDelete(whichState);
+		if(!deleted) {
 			//it didn't exist in the first place
 			Engine.log('WARNING: Tried to remove non-existant state \''+stateName+'\'.');
 		}
@@ -214,6 +201,58 @@ var StateManager = {
 	buildPath: function(input){
 		var dot = (input.charAt(0) == '[')? '' : '.'; //if it starts with [foo] no dot to join
 		return 'State' + dot + input;
+	},
+
+	//safely get nested property without eval
+	safeGet: function(path) {
+		var parts = path.split(/[.\[\]'"]+/);
+		// remove empty strings
+		parts = parts.filter(function(p) { return p !== ''; });
+		
+		var current = State;
+		for (var i = 0; i < parts.length; i++) {
+			if (current === undefined || current === null) {
+				return undefined;
+			}
+			current = current[parts[i]];
+		}
+		return current;
+	},
+
+	//safely set nested property without eval
+	safeSet: function(path, value) {
+		var parts = path.split(/[.\[\]'"]+/);
+		// remove empty strings
+		parts = parts.filter(function(p) { return p !== ''; });
+		
+		var current = State;
+		for (var i = 0; i < parts.length - 1; i++) {
+			if (current[parts[i]] === undefined || current[parts[i]] === null) {
+				current[parts[i]] = {};
+			}
+			current = current[parts[i]];
+		}
+		current[parts[parts.length - 1]] = value;
+	},
+
+	//safely delete nested property without eval
+	safeDelete: function(path) {
+		var parts = path.split(/[.\[\]'"]+/);
+		// remove empty strings
+		parts = parts.filter(function(p) { return p !== ''; });
+		
+		var current = State;
+		for (var i = 0; i < parts.length - 1; i++) {
+			if (current === undefined || current === null) {
+				return false;
+			}
+			current = current[parts[i]];
+		}
+		if (current !== undefined && current !== null && parts[parts.length - 1] in current) {
+			delete current[parts[parts.length - 1]];
+			return true;
+		}
+		return false;
 	},
 
 	fireUpdate: function(stateName, save){

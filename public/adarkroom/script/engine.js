@@ -275,13 +275,31 @@
 					$('#saveNotify').css('opacity', 1).animate({opacity: 0}, 1000, 'linear');
 					Engine._lastNotify = Date.now();
 				}
-				localStorage.gameState = JSON.stringify(State);
+				var stateJson = JSON.stringify(State);
+				var encryptedState = AdarkroomCrypto.encrypt(stateJson);
+				localStorage.gameState = encryptedState;
 			}
 		},
 
 		loadGame: function() {
 			try {
-				var savedState = JSON.parse(localStorage.gameState);
+				var savedData = localStorage.gameState;
+				var decryptedData = AdarkroomCrypto.decrypt(savedData);
+				
+				// 如果解密失败，尝试直接解析（兼容旧存档）
+				var savedState = null;
+				if (decryptedData) {
+					savedState = JSON.parse(decryptedData);
+				} else {
+					// 尝试直接解析（可能是旧版本未加密的存档）
+					try {
+						savedState = JSON.parse(savedData);
+					} catch (e2) {
+						// 解析失败，创建新游戏
+						savedState = null;
+					}
+				}
+				
 				if(savedState) {
 					State = savedState;
 					$SM.updateOldState();

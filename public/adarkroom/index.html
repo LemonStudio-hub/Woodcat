@@ -19,7 +19,7 @@
 	<!--end debug-->
 	<link rel="shortcut icon" href="favicon.ico" />
 	<link rel="image_src" href="img/adr.png" />
-	<script src="http://libs.baidu.com/jquery/1.10.1/jquery.min.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 	<script>
 		if(!window.jQuery) {
 			document.write('<script src="lib/jquery.min.js"><\/script>')
@@ -29,6 +29,7 @@
 	<script src="lib/jquery.event.move.js"></script>
 	<script src="lib/jquery.event.swipe.js"></script>
 	<script src="lib/base64.js"></script>
+	<script src="lib/crypto.js"></script>
 	<script src="lib/translate.js"></script>
 	
 	<script src="lang/langs.js"></script>
@@ -36,13 +37,56 @@
 	<script>
 		// try to read "lang" param's from url
 		var lang = decodeURIComponent((new RegExp('[?|&]lang=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-		lang='zh_cn'
+		
 		// if no language requested, try to read it from local storage
 		if(!lang){
 			try {
-				lang = localStorage.lang;
+				lang = localStorage.getItem('adarkroom_lang');
 			} catch(e) {}
 		}
+		
+		// if still no language, use browser language detection
+		if(!lang){
+			try {
+				const browserLang = navigator.language || navigator.userLanguage || 'en';
+				const langMap = {
+					'zh-CN': 'zh_cn',
+					'zh-TW': 'zh_tw',
+					'zh-HK': 'zh_tw',
+					'en-US': 'en',
+					'en-GB': 'en',
+					'ja': 'ja',
+					'ko': 'ko',
+					'es': 'es',
+					'fr': 'fr',
+					'de': 'de',
+					'it': 'it',
+					'pt-BR': 'pt_br',
+					'pt': 'pt',
+					'ru': 'ru',
+					'uk': 'uk',
+					'tr': 'tr',
+					'th': 'th',
+					'vi': 'vi',
+					'pl': 'pl',
+					'nl': 'nl',
+					'sv': 'sv',
+					'no': 'nb',
+					'cs': 'cs',
+					'el': 'el',
+					'he': 'he'
+				};
+				lang = langMap[browserLang] || 'zh_cn';
+				
+				// 保存到 localStorage
+				try {
+					localStorage.setItem('adarkroom_lang', lang);
+				} catch(e) {}
+			} catch(e) {
+				lang = 'zh_cn';
+			}
+		}
+		
 		// if a language different than english requested, load all translations
 		if(lang && lang != 'en'){
 			document.write('<script src="lang/'+lang+'/strings.js"><\/script>');
